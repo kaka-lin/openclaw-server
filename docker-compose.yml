@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  openclaw-server:
+    image: "openclaw/openclaw:latest"
+    container_name: openclaw-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    restart: unless-stopped
