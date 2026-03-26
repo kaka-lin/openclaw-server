@@ -29,6 +29,21 @@ require_cmd() {
   fi
 }
 
+# 去掉字串外層單雙引號
+strip_wrapping_quotes() {
+  local s="${1:-}"
+
+  if [[ ${#s} -ge 2 ]]; then
+    if [[ "${s:0:1}" == '"' && "${s: -1}" == '"' ]]; then
+      s="${s:1:${#s}-2}"
+    elif [[ "${s:0:1}" == "'" && "${s: -1}" == "'" ]]; then
+      s="${s:1:${#s}-2}"
+    fi
+  fi
+
+  printf '%s' "$s"
+}
+
 # 判斷輸入值是否為「啟用」(支援 1/true/yes/on)
 is_truthy_value() {
   local raw="${1:-}"
@@ -185,8 +200,6 @@ ensure_control_ui_allowed_origins() {
   local port="$OPENCLAW_GATEWAY_PORT"
   local raw_user_origins="${OPENCLAW_ALLOWED_ORIGINS:-}"
 
-  echo "🔍 [DEBUG] raw_user_origins='$raw_user_origins'"
-
   # ================================
   # ⭐ 1. 如果包含 "*" → 直接 override
   # ================================
@@ -206,48 +219,57 @@ ensure_control_ui_allowed_origins() {
   )
 
   local -a user_origins=()
+  local item=""
 
   # ================================
   # ⭐ 3. parse user input
   # ================================
-  if [[ -n "$raw_user_origins" ]]; then
+  if [[ -n "${raw_user_origins:-}" ]]; then
     if [[ "$raw_user_origins" == \[* ]]; then
-      IFS=$'\n' read -r -d '' -a user_origins < <(
-        python3 -c '
+      if command -v python3 >/dev/null 2>&1; then
+        IFS=$'\n' read -r -d '' -a user_origins < <(
+          python3 -c '
 import json, sys
 try:
     arr = json.loads(sys.argv[1])
-    for x in arr:
-        if x:
-            print(str(x))
-except:
+    if isinstance(arr, list):
+        for x in arr:
+            if x is not None:
+                s = str(x).strip()
+                if s:
+                    print(s)
+except Exception:
     pass
-' "$raw_user_origins" 2>/dev/null && printf '\0'
-      ) || true
+' "$raw_user_origins" 2>/dev/null
+          printf '\0'
+        ) || true
+      fi
     else
-      IFS=',' read -r -a user_origins <<< "$raw_user_origins"
+      IFS=',' read -r -a user_origins <<< "$raw_user_origins" || true
     fi
   fi
 
   # ================================
   # ⭐ 4. normalize
   # ================================
-  for item in "${user_origins[@]}"; do
-    item="${item#"${item%%[![:space:]]*}"}"
-    item="${item%"${item##*[![:space:]]}"}"
+  if [[ -n "${raw_user_origins:-}" && ${#user_origins[@]} -gt 0 ]]; then
+    for item in "${user_origins[@]}"; do
+      item="${item#"${item%%[![:space:]]*}"}"
+      item="${item%"${item##*[![:space:]]}"}"
 
-    [[ -z "$item" ]] && continue
+      [[ -z "$item" ]] && continue
 
-    if [[ "$item" != http://* && "$item" != https://* ]]; then
-      item="http://${item}"
-    fi
+      if [[ "$item" != http://* && "$item" != https://* ]]; then
+        item="http://${item}"
+      fi
 
-    if [[ ! "$item" =~ ^https?://[^/]+:[0-9]+($|/) ]]; then
-      item="${item}:$port"
-    fi
+      if [[ ! "$item" =~ ^https?://[^/]+:[0-9]+($|/) ]]; then
+        item="${item}:$port"
+      fi
 
-    final_origins+=("$item")
-  done
+      final_origins+=("$item")
+    done
+  fi
 
   # ================================
   # ⭐ 5. 去重 + JSON
@@ -262,10 +284,6 @@ print(json.dumps(unique))
 '
   )
 
-  echo "🔍 [DEBUG] final_origins:"
-  printf '  - %s\n' "${final_origins[@]}"
-  echo "🔍 [DEBUG] 準備寫入 JSON: $allowed_origin_json"
-
   run_prestart_cli config set gateway.controlUi.allowedOrigins "$allowed_origin_json" --strict-json
   echo "✅ 已同步 Control UI 跨域白名單 (基礎+追加)：$allowed_origin_json"
 }
@@ -277,6 +295,8 @@ print(json.dumps(unique))
 echo "🚀 開始初始化 OpenClaw 伺服器 ..."
 
 require_cmd docker
+require_cmd python3
+
 if ! docker compose version >/dev/null 2>&1; then
   fail "Docker Compose 不可用 (請嘗試：docker compose version)"
 fi
@@ -294,10 +314,12 @@ export OPENCLAW_GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-lan}"
 
 # 從 .env 讀取已有的 OPENCLAW_ALLOWED_ORIGINS
 if [[ -z "${OPENCLAW_ALLOWED_ORIGINS:-}" && -f "$ENV_FILE" ]]; then
-  OPENCLAW_ALLOWED_ORIGINS=$(grep '^OPENCLAW_ALLOWED_ORIGINS=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || true)
+  OPENCLAW_ALLOWED_ORIGINS="$(grep '^OPENCLAW_ALLOWED_ORIGINS=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || true)"
 fi
+
+OPENCLAW_ALLOWED_ORIGINS="$(strip_wrapping_quotes "${OPENCLAW_ALLOWED_ORIGINS:-}")"
 export OPENCLAW_ALLOWED_ORIGINS="${OPENCLAW_ALLOWED_ORIGINS:-}"
-echo "🔍 [DEBUG] OPENCLAW_ALLOWED_ORIGINS='${OPENCLAW_ALLOWED_ORIGINS}'"
+echo "🔍 [INFO] OPENCLAW_ALLOWED_ORIGINS='${OPENCLAW_ALLOWED_ORIGINS}'"
 
 # 區網 (非 HTTPS) 存取時需啟用，否則瀏覽器會阻擋 WebSocket 連線
 if [[ -z "${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}" ]]; then
@@ -452,7 +474,7 @@ echo "👉 本機登入網址："
 echo "   http://localhost:$OPENCLAW_GATEWAY_PORT"
 
 if [[ -n "${OPENCLAW_ALLOWED_ORIGINS:-}" ]]; then
-  IFS=',' read -r -a _o <<< "$OPENCLAW_ALLOWED_ORIGINS"
+  IFS=',' read -r -a _o <<< "$OPENCLAW_ALLOWED_ORIGINS" || true
   for o in "${_o[@]}"; do
     if [[ "$o" != *localhost* && "$o" != *127.0.0.1* && -n "$o" && "$o" != \[* && "$o" != "*" ]]; then
       [[ "$o" != http://* && "$o" != https://* ]] && o="http://$o"
