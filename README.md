@@ -59,6 +59,7 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 ## 延伸閱讀與筆記
 
+- [OpenClaw APIs 呼叫指南](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-apis.md)
 - [OpenClaw Server 部署全攻略：setup.sh 運作機制與環境配置詳解](./docs/custom-docker-setup.md)
 - [OpenClaw Docker 網路與綁定設定](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/docker-network-binding.md)
 - [OpenClaw Sandbox 沙盒與 DooD 架構](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/sandbox-architecture.md)
