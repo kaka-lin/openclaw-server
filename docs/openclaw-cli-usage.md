@@ -14,7 +14,7 @@ OpenClaw 的核心程式 (`index.js`) 設計了兩種截然不同的工作模式
 
 - **職責**：用於修改系統底層設定（例如綁定帳號、掃描 WhatsApp QR Code）。
 - **機制**：啟動一個臨時的分身程式，對資料庫執行完指令後會自動關閉，不影響 Gateway 運行。
-- **狀態**：隨開隨用，執行完畢即自動銷毀。
+- **狀態**：隨開隨用，執行完即自動銷毀。
 
 ## 2. 在本專案中執行 CLI
 
@@ -36,32 +36,32 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 - **查看申請清單**：
 
-    ```bash
-    docker compose run --rm openclaw-cli devices list
-    ```
+  ```bash
+  docker compose run --rm openclaw-cli devices list
+  ```
 
 - **核准裝置** (將 `<id>` 換成上一步看到的 ID)：
 
-    ```bash
-    docker compose run --rm openclaw-cli devices approve <id>
-    ```
+  ```bash
+  docker compose run --rm openclaw-cli devices approve <id>
+  ```
 
 #### 🔗 綁定通訊軟體頻道
 
 - **Telegram**：
 
-    ```bash
-    docker compose run --rm openclaw-cli channels add --channel telegram --token "<Token>"
-    ```
+  ```bash
+  docker compose run --rm openclaw-cli channels add --channel telegram --token "<Token>"
+  ```
 
 - **Discord**：
 
-    ```bash
-    docker compose run --rm openclaw-cli channels add --channel discord --token "<Token>"
-    ```
+  ```bash
+  docker compose run --rm openclaw-cli channels add --channel discord --token "<Token>"
+  ```
 
 - **WhatsApp (掃描 QR Code)**：
 
-    ```bash
-    docker compose run --rm openclaw-cli channels login
-    ```
+  ```bash
+  docker compose run --rm openclaw-cli channels login
+  ```

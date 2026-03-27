@@ -21,7 +21,7 @@ cp .env.example .env
 首次啟動後，瀏覽器需要完成**裝置配對**才能使用 Control UI。
 
 > [!TIP]
-> **為什麼量需要配對？**
+> **為什麼需要配對？**
 > Docker 容器內的 Gateway 看到的連線來源是 `192.168.65.1`（Docker 橋接網路），而非 `127.0.0.1`（本機）。這是一次性的安全驗證，核准後不需要重複操作。
 
 ```bash
@@ -55,7 +55,7 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 如需綁定通訊軟體 (如 Telegram、WhatsApp 或 Discord) 或進行更進階的設定，可透過臨時容器執行 CLI 指令。
 
-👉 **詳細原理解析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/openclaw-cli-usage.md)
+👉 **詳細原理分析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/openclaw-cli-usage.md)
 
 ## 延伸閱讀與筆記
 

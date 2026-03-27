@@ -27,33 +27,42 @@
 ## 3. 資料持久化與權限自動修復
 
 - **遇到的問題**：Docker 掛載本機資料夾時，檔案權限通常會被系統使用者綁定，導致容器內的 `node` 程式無法寫入資料。
+
 - **解決方案**：
 
-    ```bash
-    find /home/node/.openclaw -xdev -exec chown node:node {} +
-    ```
+  ```bash
+  find /home/node/.openclaw -xdev -exec chown node:node {} +
+  ```
 
-    這裡使用了 `-xdev` 參數來限制權限修復範圍，**不會跨越不同的掛載點**，確保不會誤動到您 `workspace` 裡的個人專案檔案。
+  這裡使用了 `-xdev` 參數來限制權限修復範圍，**不會跨越不同的掛載點**，確保不會誤動到您 `workspace` 裡的個人專案檔案。
 
 ## 4. CORS 跨來源資源共用 (Smart Origins)
 
 - **遇到的問題**：前端 UI 與後端 API 之間的連線被瀏覽器阻擋（CORS 限制）。
+
 - **解決方案**：腳本透過 `ensure_control_ui_allowed_origins()` 函式動態設定白名單。
+
 - **手動設定方式**：您也可以直接在 `.env` 中設定 `OPENCLAW_ALLOWED_ORIGINS`。
-    - 範例：`OPENCLAW_ALLOWED_ORIGINS=192.168.1.100,http://mac-mini.local:18789`
-    - 全開放（測試用）：`OPENCLAW_ALLOWED_ORIGINS=["*"]`
+
+  - 範例：`OPENCLAW_ALLOWED_ORIGINS=192.168.1.100,http://mac-mini.local:18789`
+  - 全開放（測試用）：`OPENCLAW_ALLOWED_ORIGINS=["*"]`
+
 - **建議**：請優先使用 `localhost` 而非 `127.0.0.1` 存取。
 
 ## 5. WebSocket 安全與區網存取
 
 - **遇到的問題**：在非安全環境 (Non-Secure Context) 下，瀏覽器會限制加密通訊機制。
+
 - **設定項**：`OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`
+
 - **用途**：如果您是透過區網 IP (如 `http://192.168.x.x:18789`) 存取，必須開啟此選項，否則 Control UI 將無法連線。
 
 ## 6. Sandbox 沙盒生命週期管理（含失敗還原機制）
 
 - **前置檢查**：啟動前會先確認容器內是否有 Docker CLI。
+
 - **Socket 掛載**：確認環境支援後，才會動態產出 `docker-compose.sandbox.yml`。
+
 - **失敗還原**：如果 Sandbox 設定流程失敗，腳本會自動將環境還原至初始狀態，確保存取正常。
 
 ## 7. 常見問題排除 (Troubleshooting)
@@ -65,6 +74,7 @@
 **解決方案**：
 
 1. 優先使用 `http://localhost:18789` 存取。
+
 2. 若必須透過區網 IP 存取，請確保 `.env` 中的 `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 已開啟。
 
 ### 出現 "origin not allowed" 錯誤？
@@ -74,4 +84,9 @@
 **解決方案**：
 
 1. 確認 `.env` 中的 `OPENCLAW_ALLOWED_ORIGINS` 是否有包含您目前的存取網址。
-2. 或直接用 CLI 強制開放：`docker compose run --rm openclaw-cli config set gateway.controlUi.allowedOrigins '["*"]' --json`
+
+2. 或直接用 CLI 強制開放：
+
+    ```bash
+    docker compose run --rm openclaw-cli config set gateway.controlUi.allowedOrigins '["*"]' --json
+    ```

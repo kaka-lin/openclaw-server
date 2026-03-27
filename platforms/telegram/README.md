@@ -2,9 +2,7 @@
 
 本目錄用於管理 OpenClaw 的 Telegram Messaging Platform 配置與筆記。
 
-## 🚀 串接步驟
-
-### 1. 向 @BotFather 申請 Bot Token
+## 1. 使用 @BotFather 建立 Bot
 
 1. 在 Telegram 中搜尋並開啟 [@BotFather](https://t.me/botfather)。
 2. 發送下面指令：
@@ -14,12 +12,11 @@
     /newbot
     ```
 
-3. 依照指示設定：
+3. 依照指示完成設定：
+    - **Bot Name**: 顯示名稱
+    - **Bot Username**: Bot 帳號名稱，且名稱結尾必須為 `bot`
 
-    - Bot Name: 顯示名稱
-    - Bot Username: 帳號名稱（結尾必須是 bot）
-
-4. 你會拿到 **API Token**，存下來：
+4. 建立完成後，BotFather 會提供一組 **HTTP API Token**。
 
     ```sh
     HTTP API Token
@@ -27,61 +24,68 @@
     123456:ABC-XYZ...
     ```
 
-### 2. 取得你的 Chat ID
+## 2. 取得 Telegram Chat ID
 
 1. 在 Telegram 中搜尋並開啟你的 Bot。
-2. 點選「Start」，然後隨意打一段訊息，例如：`hello`
-3. 透過瀏覽器開啟或在終端機執行以下網址（需先暫停 OpenClaw 伺服器，以免它把訊息收走）：
+2. 點選「Start」，然後隨意打一段訊息，例如：
+
+    ```bash
+    hello
+    ```
+
+3. 在終端機執行以下指令：
 
     ```bash
     curl https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
     ```
 
-    你會在回傳的 JSON `result` 陣列中看到你的 Chat ID，類似這樣：
+4. 在回傳的 JSON 中，找到 result[].message.chat.id，這個值就是你的 Chat ID。
+  
+    範例如下：
 
     ```json
     {
-        "result": [
-            {
-                "message": {
-                    "chat": {
-                        "id": 123456789
-                    }
-                }
+      "result": [
+        {
+          "message": {
+            "chat": {
+              "id": 123456789
             }
-        ]
+          }
+        }
+      ]
     }
     ```
 
-### 3. 在 OpenClaw 設定 Telegram
+## 3. 在 OpenClaw 中加入 Telegram Channel
 
-請在專案根目錄執行以下指令（將 `<YOUR_TOKEN>` 替換為上一步取得的 Token）：
+請在專案根目錄執行以下指令，並將 `<YOUR_TOKEN>` 替換為前一步取得的 Bot Token：
 
 ```bash
 docker compose run --rm openclaw-cli channels add --channel telegram --token "<YOUR_TOKEN>"
 ```
 
-執行完成後，請重啟 Gateway 以啟用新頻道：
+完成後，重新啟動 Gateway 以套用新設定：
 
 ```bash
 docker compose restart openclaw-gateway
 ```
 
-### 4. 測試連線是否成功
+## 4. 測試連線是否成功
 
-預設情況下，OpenClaw 接上 Channel 後，會自動將收到的訊息導向內建的代理人 (Agent) 處理。
+OpenClaw 接上 Channel 後，預設會將收到的訊息導向內建 Agent 處理。
 
-1. **開啟 Gateway 即時日誌**：
-
-    在終端機輸入以下指令並保持開啟，這樣你能看到伺服器的反應：
+1. 先開啟 Gateway 即時日誌：
 
     ```bash
     docker compose logs -f openclaw-gateway
     ```
 
-2. **發送測試訊息**：
+2. 在 Telegram 中對 Bot 發送一則測試訊息，例如：
 
-    打開 Telegram，對你的 Bot 說：「你好！這是一個測試。」
+    ```bash
+    你好！這是一個測試。
+    ```
 
 3. **首次通訊配置（重要！）**：
 
@@ -96,7 +100,7 @@ docker compose restart openclaw-gateway
     openclaw pairing approve telegram ABCXYZ
     ```
 
-4. **在終端機核准配對**：
+4. **請回到終端機執行以下指令完成授權：**：
 
     把 Bot 給你的這行指令，加上 `docker compose run --rm openclaw-cli` 的前綴即可完成授權：
 
@@ -107,5 +111,5 @@ docker compose restart openclaw-gateway
 
     核准成功後，你在 Telegram 再輸入一次問題，就能收到正常的 AI 回覆了！
 
-> [!TIP]
-> 如果你的 `openclaw-gateway` 用大寫紅字報錯，通常是因為你在 `.env` 裡面的 LLM API Key (如 Anthropic, OpenAI 或 Gemini) 還沒有填寫。如果有遇到問題，請先檢查 LLM 金鑰。
+  > [!TIP]
+  > 如果你的 `openclaw-gateway` 用大寫紅字報錯，通常是因為你在 `.env` 裡面的 LLM API Key (如 Anthropic, OpenAI 或 Gemini) 還沒有填寫。如果有遇到問題，請先檢查 LLM 金鑰。
