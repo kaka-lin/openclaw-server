@@ -421,12 +421,10 @@ docker compose "${COMPOSE_ARGS[@]}" up -d openclaw-gateway
 if [[ -n "$SANDBOX_ENABLED" ]]; then
   echo "🛡️ 正在設定 Sandbox 安全邊界..."
   SANDBOX_FILE="$ROOT_DIR/docker-compose.sandbox.yml"
-  cat >"$SANDBOX_FILE" <<YAML
-services:
-  openclaw-gateway:
-    volumes: [ "${DOCKER_SOCKET_PATH}:/var/run/docker.sock" ]
-    group_add: [ "${DOCKER_GID:-0}" ]
-YAML
+
+  # docker-compose.sandbox.yml 改為固定存在於 repo 中
+  [[ -f "$SANDBOX_FILE" ]] || fail "找不到 $SANDBOX_FILE，請確認它已固定存在於 repo 中"
+
   COMPOSE_ARGS+=("-f" "$SANDBOX_FILE")
 
   sandbox_ok=true
@@ -445,22 +443,26 @@ YAML
 
   if [[ "$sandbox_ok" == true ]]; then
     echo "✅ Sandbox 設定成功，正在套用 Docker 掛載..."
-    docker compose "${COMPOSE_ARGS[@]}" up -d openclaw-gateway
+    docker compose "${COMPOSE_ARGS[@]}" up -d --force-recreate openclaw-gateway
+    docker compose "${COMPOSE_ARGS[@]}" restart openclaw-gateway
   else
     echo "⚠️ Sandbox 設定失敗，執行安全回滾。"
     if ! run_runtime_cli base no-deps config set agents.defaults.sandbox.mode "off" >/dev/null; then
       echo "WARNING: Failed to roll back agents.defaults.sandbox.mode to off" >&2
     fi
-    rm -f "$SANDBOX_FILE"
     docker compose "${BASE_COMPOSE_ARGS[@]}" up -d --force-recreate openclaw-gateway
   fi
 else
   if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.mode "off" >/dev/null; then
     echo "WARNING: Failed to reset agents.defaults.sandbox.mode to off" >&2
   fi
-  rm -f "$ROOT_DIR/docker-compose.sandbox.yml" || true
+  if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.scope "agent" >/dev/null; then
+    echo "WARNING: Failed to reset agents.defaults.sandbox.scope to agent" >&2
+  fi
+  if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.workspaceAccess "none" >/dev/null; then
+    echo "WARNING: Failed to reset agents.defaults.sandbox.workspaceAccess to none" >&2
+  fi
 fi
-
 # ==============================================================================
 # 完成提示
 # ==============================================================================

@@ -1,4 +1,4 @@
-# OpenClaw Server 部署全攻略：setup.sh 運作機制與環境配置詳解
+# OpenClaw Server 部署全攻略：部署機制深度解析
 
 我們專案提供的 `setup.sh` 腳本參考了官方 `docker-setup` 的核心邏輯，並針對 `openclaw-gateway` 與 `openclaw-cli` 雙服務架構進行了優化。如果直接跑 `docker-compose up` 而跳過這個腳本，通常會遇到 Token 衝突、權限異常、CORS 封鎖等讓人頭痛的問題。
 

@@ -1,0 +1,12 @@
+services:
+  openclaw-gateway:
+    volumes:
+      # Sandbox 關鍵：
+      # 把 host 的 Docker socket 掛進 gateway 容器
+      # 這樣容器內才能呼叫 host Docker 建立隔離執行環境
+      - ${OPENCLAW_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+
+    group_add:
+      # 讓容器內程序有權限存取 docker.sock
+      # 需對應 host 上 docker.sock 的 group id
+      - "${DOCKER_GID:-0}"
