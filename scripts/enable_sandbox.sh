@@ -37,7 +37,7 @@ set -euo pipefail
 # 取得這支 script 所在的資料夾
 # 例如如果 script 在 /app/enable_sandbox.sh
 # 那 ROOT_DIR 就會是 /app
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # .env 檔位置
 ENV_FILE="$ROOT_DIR/.env"

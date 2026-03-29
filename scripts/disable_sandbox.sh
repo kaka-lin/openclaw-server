@@ -16,7 +16,7 @@ set -euo pipefail
 # 5. 驗證 sandbox 是否已關閉
 # =========================================================
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT_DIR/.env"
 BASE_COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 SANDBOX_COMPOSE_FILE="$ROOT_DIR/docker-compose.sandbox.yml"
