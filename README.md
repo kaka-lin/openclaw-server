@@ -57,26 +57,14 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 👉 **詳細原理分析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/openclaw-cli-usage.md)
 
-## Sandbox (沙盒環境)
-
-OpenClaw 支援 **DooD (Docker-out-of-Docker)** 架構的沙盒環境，讓 AI 代理人可以在隔離的容器中安全地執行程式碼，避免污染主機環境。
-
-- **快速變更狀態**：
-  - 啟用：`./scripts/enable_sandbox.sh`
-  - 關閉：`./scripts/disable_sandbox.sh`
-
-👉 **詳細操作指引：** [OpenClaw Sandbox 啟用與關閉指南](./docs/openclaw-sandbox-setup.md)
-
 ## 延伸閱讀與筆記
 
 ### 實作與操作
 
 - [OpenClaw APIs 呼叫指南](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-apis.md)
 - [OpenClaw Server 部署全攻略：部署機制深度解析 (Deployment Deep Dive)](./docs/deployment-deep-dive.md)
-- [OpenClaw Sandbox 啟用與關閉指南](./docs/openclaw-sandbox-setup.md)
 
 ### 架構與原理 (LLM-notes)
 
-- [OpenClaw Sandbox 沙盒與 DooD 架構原理](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/sandbox-architecture.md)
 - [OpenClaw Docker 網路與綁定設定](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/docker-network-binding.md)
 - [OpenClaw 代理人 (Agents) 設計細節](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-agents.md)

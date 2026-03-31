@@ -329,31 +329,7 @@ if [[ -z "${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}" ]]; then
 fi
 export OPENCLAW_ALLOW_INSECURE_PRIVATE_WS="${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}"
 
-# Sandbox 設定
-RAW_SANDBOX_SETTING="${OPENCLAW_SANDBOX:-}"
-if [[ -z "$RAW_SANDBOX_SETTING" && -f "$ENV_FILE" ]]; then
-  RAW_SANDBOX_SETTING=$(grep '^OPENCLAW_SANDBOX=' "$ENV_FILE" 2>/dev/null | cut -d= -f2 || true)
-fi
-
-SANDBOX_ENABLED=""
-if is_truthy_value "$RAW_SANDBOX_SETTING"; then
-  SANDBOX_ENABLED="1"
-fi
-export OPENCLAW_SANDBOX="$SANDBOX_ENABLED"
-
-# Docker Socket
-DOCKER_SOCKET_PATH="${OPENCLAW_DOCKER_SOCKET:-}"
-if [[ -z "$DOCKER_SOCKET_PATH" && "${DOCKER_HOST:-}" == unix://* ]]; then
-  DOCKER_SOCKET_PATH="${DOCKER_HOST#unix://}"
-fi
-if [[ -z "$DOCKER_SOCKET_PATH" ]]; then
-  DOCKER_SOCKET_PATH="/var/run/docker.sock"
-fi
-export OPENCLAW_DOCKER_SOCKET="$DOCKER_SOCKET_PATH"
-
-# 偵測 Docker Socket GID (macOS/Linux 相容)
-DOCKER_GID="$(stat -c '%g' "$DOCKER_SOCKET_PATH" 2>/dev/null || stat -f '%g' "$DOCKER_SOCKET_PATH" 2>/dev/null || echo "")"
-export DOCKER_GID
+# Sandbox 已停用：setup 僅維持非 sandbox 初始化流程。
 
 echo "📁 建立本機資料夾..."
 mkdir -p "$OPENCLAW_CONFIG_DIR" "$OPENCLAW_WORKSPACE_DIR"
@@ -385,10 +361,7 @@ upsert_env "$ENV_FILE" \
   OPENCLAW_GATEWAY_BIND \
   OPENCLAW_GATEWAY_TOKEN \
   OPENCLAW_ALLOWED_ORIGINS \
-  OPENCLAW_ALLOW_INSECURE_PRIVATE_WS \
-  OPENCLAW_SANDBOX \
-  OPENCLAW_DOCKER_SOCKET \
-  DOCKER_GID
+  OPENCLAW_ALLOW_INSECURE_PRIVATE_WS
 
 # ==============================================================================
 # 8. 修正權限與初始化 (Onboard)
@@ -416,53 +389,13 @@ echo "🚀 啟動伺服器 (openclaw-gateway)..."
 docker compose "${COMPOSE_ARGS[@]}" up -d openclaw-gateway
 
 # ==============================================================================
-# 10. Sandbox 沙盒設定
+# 10. 確保 Sandbox 關閉
 # ==============================================================================
-if [[ -n "$SANDBOX_ENABLED" ]]; then
-  echo "🛡️ 正在設定 Sandbox 安全邊界..."
-  SANDBOX_FILE="$ROOT_DIR/docker-compose.sandbox.yml"
-
-  # docker-compose.sandbox.yml 改為固定存在於 repo 中
-  [[ -f "$SANDBOX_FILE" ]] || fail "找不到 $SANDBOX_FILE，請確認它已固定存在於 repo 中"
-
-  COMPOSE_ARGS+=("-f" "$SANDBOX_FILE")
-
-  sandbox_ok=true
-  if ! run_runtime_cli current no-deps config set agents.defaults.sandbox.mode "non-main" >/dev/null; then
-    echo "WARNING: Failed to set agents.defaults.sandbox.mode" >&2
-    sandbox_ok=false
-  fi
-  if ! run_runtime_cli current no-deps config set agents.defaults.sandbox.scope "agent" >/dev/null; then
-    echo "WARNING: Failed to set agents.defaults.sandbox.scope" >&2
-    sandbox_ok=false
-  fi
-  if ! run_runtime_cli current no-deps config set agents.defaults.sandbox.workspaceAccess "none" >/dev/null; then
-    echo "WARNING: Failed to set agents.defaults.sandbox.workspaceAccess" >&2
-    sandbox_ok=false
-  fi
-
-  if [[ "$sandbox_ok" == true ]]; then
-    echo "✅ Sandbox 設定成功，正在套用 Docker 掛載..."
-    docker compose "${COMPOSE_ARGS[@]}" up -d --force-recreate openclaw-gateway
-    docker compose "${COMPOSE_ARGS[@]}" restart openclaw-gateway
-  else
-    echo "⚠️ Sandbox 設定失敗，執行安全回滾。"
-    if ! run_runtime_cli base no-deps config set agents.defaults.sandbox.mode "off" >/dev/null; then
-      echo "WARNING: Failed to roll back agents.defaults.sandbox.mode to off" >&2
-    fi
-    docker compose "${BASE_COMPOSE_ARGS[@]}" up -d --force-recreate openclaw-gateway
-  fi
-else
-  if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.mode "off" >/dev/null; then
-    echo "WARNING: Failed to reset agents.defaults.sandbox.mode to off" >&2
-  fi
-  if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.scope "agent" >/dev/null; then
-    echo "WARNING: Failed to reset agents.defaults.sandbox.scope to agent" >&2
-  fi
-  if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.workspaceAccess "none" >/dev/null; then
-    echo "WARNING: Failed to reset agents.defaults.sandbox.workspaceAccess to none" >&2
-  fi
+echo "==> 確保 sandbox 已關閉"
+if ! run_runtime_cli current with-deps config set agents.defaults.sandbox.mode "off" >/dev/null; then
+  echo "WARNING: Failed to set agents.defaults.sandbox.mode to off" >&2
 fi
+
 # ==============================================================================
 # 完成提示
 # ==============================================================================
