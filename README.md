@@ -55,14 +55,18 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 如需綁定通訊軟體 (如 Telegram、WhatsApp 或 Discord) 或進行更進階的設定，可透過臨時容器執行 CLI 指令。
 
-👉 **詳細原理分析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/openclaw-cli-usage.md)
+👉 **詳細原理分析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/deployment/cli-usage.md)
+
+## 📖 完整文件庫 (Documentation)
+
+更多關於各平台的整合指南與技術細節，請參閱 [OpenClaw 文件庫索引](./docs/README.md)。
 
 ## 延伸閱讀與筆記
 
 ### 實作與操作
 
 - [OpenClaw APIs 呼叫指南](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-apis.md)
-- [OpenClaw Server 部署全攻略：部署機制深度解析 (Deployment Deep Dive)](./docs/deployment-deep-dive.md)
+- [OpenClaw Server 部署全攻略：部署機制深度解析 (Deployment Deep Dive)](./docs/deployment/setup-deep-dive.md)
 
 ### 架構與原理 (LLM-notes)
 
