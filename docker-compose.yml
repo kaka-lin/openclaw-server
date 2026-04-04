@@ -2,45 +2,39 @@ services:
   openclaw-gateway:
     image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
     container_name: "openclaw-gateway"
+    restart: unless-stopped # 開機自動重啟
     ports:
+      # 開放區域網路/外網存取 (對應 OPENCLAW_GATEWAY_BIND=lan)
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
 
+    # 宣告 &openclaw-volumes 把共用的硬碟掛載打包
     volumes:
-      # OpenClaw 設定資料
-      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      # Openclaw 設定目錄
+      &openclaw-volumes
+      - ${OPENCLAW_CONFIG_DIR:-${HOME}/.openclaw}:/home/node/.openclaw
+      # Openclaw 工作目錄
+      - ${OPENCLAW_WORKSPACE_DIR:-${HOME}/.openclaw/workspace}:/home/node/.openclaw/workspace
 
-      # OpenClaw 工作目錄
-      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/home/node/.openclaw/workspace
+    # 宣告 &openclaw-env-file 把共用的變數讀取檔案打包
+    env_file: &openclaw-env-file
+      - .env
 
     environment:
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
-      # 綁定模式，通常 lan / loopback
-      - OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND:-lan}
-      # 容器時區
-      - TZ=Asia/Taipei
-    env_file:
-      - .env
-    # 開機自動重啟
-    restart: unless-stopped
+      TZ: ${TZ:-Asia/Taipei}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
 
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
     container_name: "openclaw-cli"
-
+    # 只有在明確下令 docker compose --profile cli 才被啟用
+    profiles:
+      - cli
     # 與 gateway 共用 network namespace，方便直接操作同一套 OpenClaw 環境
     network_mode: "service:openclaw-gateway"
     entrypoint: [ "node", "dist/index.js" ]
-    volumes:
-      # CLI 也要掛相同的設定目錄
-      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
 
-      # CLI 也要掛相同的 workspace
-      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/home/node/.openclaw/workspace
-
-    env_file:
-      - .env
-
-    # 只有在 compose run --profile cli 或 run 指定服務時才會用到
-    profiles:
-      - cli
+    # 💡 呼叫 YAML Alias 直接把設定原封不動套用過來！
+    volumes: *openclaw-volumes
+    env_file: *openclaw-env-file
