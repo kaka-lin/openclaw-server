@@ -26,8 +26,6 @@ services:
       OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
       # 輪詢卡死偵測 (預設 3 分鐘)
       TELEGRAM_POLLING_STALL_TIMEOUT: ${TELEGRAM_POLLING_STALL_TIMEOUT:-180000}
-      # 強制維持 Socket 活躍
-      UNDICI_AGENT_KEEPALIVE: ${UNDICI_AGENT_KEEPALIVE:-1}
 
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
