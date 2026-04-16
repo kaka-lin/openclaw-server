@@ -60,6 +60,8 @@ docker compose -f docker-compose.yml restart openclaw-gateway
 
 ### 2.5 步驟 5：啟動 Mac Host Node
 
+#### 選項一：手動執行（測試用）
+
 在 Mac Terminal 執行（請替換為你的 Gateway Token）：
 
 ```bash
@@ -69,6 +71,34 @@ openclaw node run --host 127.0.0.1 --port 18789 --display-name "Mac Mini Node"
 
 > [!IMPORTANT]
 > 此指令必須保持執行狀態，不可關閉。
+
+#### 選項二：macOS LaunchAgent（開機自動啟動，推薦）
+
+Repo 提供了一個安裝腳本，會自動偵測 `openclaw` 路徑與 Gateway Token，並直接寫入 `~/Library/LaunchAgents/`。
+
+1. 執行安裝腳本：
+
+    ```bash
+    bash scripts/install-node-launchagent.sh
+    ```
+
+    腳本會依序：
+
+    - 自動偵測 `openclaw` binary 路徑（支援 nvm）
+    - 自動從 `~/.openclaw/openclaw.json` 讀取 Gateway Token
+    - 詢問 Node 顯示名稱（預設 `Mac Mini Node`）
+    - 寫入 plist 並執行 `launchctl load`
+
+2. 確認服務正常運作：
+
+    ```bash
+    launchctl list | grep openclaw
+    cat /tmp/openclaw-node.log
+    ```
+
+> [!NOTE]
+> LaunchAgent 會在登入後自動啟動，並在異常退出時自動重啟（`KeepAlive: true`）。
+> 若需手動調整，plist 範本位於 `scripts/com.openclaw.node.plist`。
 
 ### 2.6 步驟 6：批准裝置連線 (Docker 端)
 
