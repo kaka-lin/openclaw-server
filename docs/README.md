@@ -20,7 +20,11 @@
 
 - [部署腳本技術全解析 (Setup Deep Dive)](deployment/setup-deep-dive.md)
 
-## 5. 架構原理與研究 (Architecture & Theory)
+## 5. 疑難排解 (Troubleshooting)
+
+- [關閉 VPN 後 Telegram Polling / LLM API 斷線問題](troubleshooting/docker-dns-vpn.md)
+
+## 6. 架構原理與研究 (Architecture & Theory)
 
 對於想要深入了解 OpenClaw 核心設計（如 DooD 沙盒、工具系統等）的使用者，請參閱個人筆記庫：
 
