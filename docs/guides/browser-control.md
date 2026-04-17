@@ -146,15 +146,30 @@ bash scripts/uninstall-node-launchagent.sh
 
 ### 3.1 檢查 Browser Profile
 
-在 Mac Host 執行：
+透過 Docker CLI 執行（因為 Gateway 跑在 Docker 內，需使用已配對的 operator token）：
 
 ```bash
-openclaw browser profiles
+docker compose -f docker-compose.yml run --rm openclaw-cli browser profiles
 ```
+
+> [!NOTE]
+> 因為本指南的架構是 Gateway 跑在 Docker 內，已配對的 operator token 在 Docker CLI 中，
+> 所以驗證指令需透過 Docker CLI 執行。
+> 如果你的 Gateway 是直接跑在本機（非 Docker），則改用 `openclaw browser profiles` 即可。
+>
+> **注意：** Mac Host 的 `openclaw` 若是以 `--no-onboard` 安裝的純 Node，
+> 其 operator token 未配對，在 Host 直接執行此指令會觸發 Node 進入 repair 狀態。
 
 **預期結果：**
 
-應看到 `user: running (...) [existing-session]`。這代表 Mac 現有的 Chrome session 已可被附著。
+應看到類似以下輸出，代表 Node 已成功連接到 Mac 上正在執行的 Chrome：
+
+```text
+openclaw: running (2 tabs) [default]
+  port: 18800, color: #FF4500
+user: running (3 tabs) [existing-session]
+  transport: chrome-mcp, color: #00AA00
+```
 
 ### 3.2 檢查工具清單
 
