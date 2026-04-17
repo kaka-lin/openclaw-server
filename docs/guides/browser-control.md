@@ -58,9 +58,11 @@ docker compose -f docker-compose.yml run --rm openclaw-cli config set browser.de
 docker compose -f docker-compose.yml restart openclaw-gateway
 ```
 
-### 2.5 步驟 5：啟動 Mac Host Node
+### 2.5 步驟 5：啟動 Mac Host Node 並批准連線
 
-#### 選項一：手動執行（測試用）
+#### 2.5.1. 啟動 Mac Host Node
+
+##### 選項一：手動執行
 
 在 Mac Terminal 執行（請替換為你的 Gateway Token）：
 
@@ -72,7 +74,7 @@ openclaw node run --host 127.0.0.1 --port 18789 --display-name "Mac Mini Node"
 > [!IMPORTANT]
 > 此指令必須保持執行狀態，不可關閉。
 
-#### 選項二：macOS LaunchAgent（開機自動啟動，推薦）
+##### 選項二：macOS LaunchAgent（開機自動啟動，推薦）
 
 Repo 提供了一個安裝腳本，會自動偵測 `openclaw` 路徑與 Gateway Token，並直接寫入 `~/Library/LaunchAgents/`。
 
@@ -100,19 +102,40 @@ Repo 提供了一個安裝腳本，會自動偵測 `openclaw` 路徑與 Gateway 
 > LaunchAgent 會在登入後自動啟動，並在異常退出時自動重啟（`KeepAlive: true`）。
 > 若需手動調整，plist 範本位於 `scripts/com.openclaw.node.plist`。
 
-### 2.6 步驟 6：批准裝置連線 (Docker 端)
+#### 2.5.2. 批准裝置連線 (Docker 端)
 
-在 Docker CLI 中核准來自 Mac Node 的連線：
+Node 啟動後會向 Gateway 發起配對請求，在 Docker CLI 中核准連線才能正式使用：
 
 ```bash
-# 列出待配對裝置
+# 列出待配對裝置，找到對應的 pairing code
 docker compose -f docker-compose.yml run --rm openclaw-cli devices list
 
-# 批准最新的 pending 裝置
-docker compose -f docker-compose.yml run --rm openclaw-cli devices approve --latest
+# 批准指定裝置（替換為 list 輸出中對應的 pairing code）
+docker compose -f docker-compose.yml run --rm openclaw-cli devices approve <pairing-code>
 ```
 
-### 2.7 步驟 7：準備 Mac Chrome
+#### 2.5.3. 停止或卸載 LaunchAgent
+
+如需停止服務或重新安裝，執行卸載腳本：
+
+```bash
+bash scripts/uninstall-node-launchagent.sh
+```
+
+腳本會依序：
+
+- 停止正在執行的服務（`launchctl unload`）
+- 詢問是否刪除 plist 設定檔
+
+> [!TIP]
+> 僅重啟服務（不刪除 plist）可用：
+>
+> ```bash
+> launchctl unload ~/Library/LaunchAgents/com.openclaw.node.plist
+> launchctl load  ~/Library/LaunchAgents/com.openclaw.node.plist
+> ```
+
+### 2.6 步驟 6：準備 Mac Chrome
 
 1. 確保 **Chrome 保持開啟**。
 2. 至少保留一個分頁。
@@ -187,7 +210,22 @@ openclaw browser profiles
 ### 5.3 Q: Node 顯示 `pairing required`？
 
 **原因：** Mac Node 尚未在 Gateway 中被核准。
-**解法：** 使用 `openclaw-cli devices approve --latest` 進行核准。
+**解法：** 執行 `openclaw-cli devices list` 取得 pairing code，再用 `openclaw-cli devices approve <pairing-code>` 進行核准。
+
+### 5.4 Q: 如何完整移除 LaunchAgent？
+
+**解法：**
+
+```bash
+bash scripts/uninstall-node-launchagent.sh
+```
+
+或手動執行：
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.openclaw.node.plist
+rm ~/Library/LaunchAgents/com.openclaw.node.plist
+```
 
 ## 延伸閱讀
 
