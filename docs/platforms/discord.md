@@ -60,6 +60,8 @@
 
 若您的 Agent 暫時無法對話或您喜歡純 CLI 修改，可以直接將所有變數打入 Docker 環境中：
 
+> 💡 **多 Agent 注意**：如果您正在設定非 `main` 的 Agent（例如 `coder`），請在所有 `openclaw` 指令前加上 `--profile <agent_id>`（例如 `openclaw --profile coder config set ...`）。
+
 1. **將資訊全數加入 `.env` 檔案**：
 
     ```bash
@@ -80,29 +82,14 @@
     # 啟用 Discord 通道
     docker exec -it openclaw-gateway openclaw config set channels.discord.enabled true --strict-json
 
-    # 將 Token 與 ID 連結至環境變數
+    # 將 Token 與 ID 連結（注意路徑層級與格式）
     docker exec -it openclaw-gateway openclaw config set channels.discord.token --ref-provider default --ref-source env --ref-id DISCORD_BOT_TOKEN
-    docker exec -it openclaw-gateway openclaw config set channels.discord.users.default --ref-provider default --ref-source env --ref-id DISCORD_USER_ID
-    docker exec -it openclaw-gateway openclaw config set channels.discord.guilds.default --ref-provider default --ref-source env --ref-id DISCORD_SERVER_ID
+    docker exec -it openclaw-gateway openclaw config set channels.discord.allowFrom '["user:<您的_USER_ID>"]' --strict-json
+    docker exec -it openclaw-gateway openclaw config set channels.discord.groupPolicy "allowlist"
+    docker exec -it openclaw-gateway openclaw config set channels.discord.guilds."<您的_SERVER_ID>" '{"requireMention": false}' --strict-json
     ```
 
-## 3. 第三階段：身分核准與配對 (Pairing)
-
-1. **私訊機器人**：在 Discord 私訊 (DM) 你的機器人隨便一句話。
-
-    > ⚠️ **重要前提**：請確保您在 Discord 的帳號隱私設定中，**允許來自該伺服器成員的私人訊息**，否則您將無法收到機器人傳來的配對碼。
-
-2. **取得配對碼**：機器人會回傳一組 Pairing Code。
-3. **核准配對**：
-
-    - **方法 A (對著現有機器人說)**：核准這個 Discord 配對碼： `<CODE>`
-    - **方法 B (使用 CLI)**：
-
-      ```bash
-      docker exec -it openclaw-gateway openclaw pairing approve discord <CODE>
-      ```
-
-## 4. 第四階段：進階 - 建立伺服器工作區 (Workspace)
+## 3. 第三階段：進階 - 建立伺服器工作區 (Workspace)
 
 當私訊 (DM) 成功運作後，非常推薦將您的 Discord 伺服器設定為**完整工作區**（特別適合專屬您與機器人的私人伺服器）。
 
@@ -116,11 +103,12 @@
       - **透過 CLI (預設嚴格模式)**：
 
         ```bash
+        docker exec -it openclaw-gateway openclaw config set channels.discord.groupPolicy "allowlist"
         docker exec -it openclaw-gateway openclaw config set channels.discord.guilds."<您的公會 ID>".users '["<您的 User ID>"]' --strict-json
         ```
 
         > 💡 **進階設定 (全域開放 vs 鎖定使用者)**
-        > 
+        >
         > 如果您覺得每個公會都要設定太麻煩，您也可以將 `channels.discord.groupPolicy` 設為 `"open"` (允許在所有加入的伺服器運作)。
         > 同時強烈建議搭配設定 `channels.discord.allowFrom` 全域黑白名單，只填寫您自己的 User ID。這樣一來，不管機器人被拉去哪個伺服器，它都**只會聽您一個人的話**！
 
@@ -144,7 +132,7 @@
 > 💡 **開始聊天！**
 > 設定完成後，您可以建立像是 `#coding`、`#home`、`#research` 等不同的頻道。機器人會辨識頻道名稱，並且**每個頻道都會擁有完全獨立與隔離的對話工作階段 (Session)**，完美貼合您的工作流！
 
-## 5. 底層對話模型運作邏輯 (Runtime Model)
+## 4. 底層對話模型運作邏輯 (Runtime Model)
 
 深入了解 OpenClaw 處理 Discord 對話的系統底層邏輯：
 
@@ -155,7 +143,7 @@
 5. **預設忽略群組 (Group DMs)**：群組私聊預設是忽略不處理的 (`channels.discord.dm.groupEnabled=false`)。
 6. **Slash 指令隔離**：原生的斜線指令 (`/`) 會在獨立的環境中執行 (`agent:<agentId>:discord:slash:<userId>`)，但它會帶著 `CommandTargetSessionKey`，將結果漂亮地送回您目前所屬的對話頻道中。
 
-## 6. Feature details
+## 5. Feature details
 
 根據官方文件，OpenClaw 對 Discord 還支援以下強大功能，可透過設定檔或 CLI 開啟：
 

@@ -1,0 +1,30 @@
+# agents.yaml — Multi-Agent 配置清單
+#
+# 定義額外的專家 Agent（main 帳號由腳本自動處理，不需要在此列出）。
+# 每個 Agent 對應一個獨立的 Discord Bot，Token 儲存在 .env 中。
+#
+# 如果不需要多 Agent，刪除或重新命名此檔案即可（腳本會自動跳過第二階段）。
+#
+# 欄位說明：
+#   id        — Agent 識別碼，同時也是 Discord 帳號名稱與路由綁定名稱
+#   name      — Agent 顯示名稱 / 個性描述
+#   token_env — .env 中對應 Bot Token 的環境變數名稱
+#
+# 詳細說明：docs/guides/multi-agent-discord.md
+
+agents:
+  - id: coder
+    name: "寫程式與 Code Review 專用助手"
+    token_env: DISCORD_BOT_TOKEN_CODER
+
+  - id: researcher
+    name: "研究與資料分析專用助手"
+    token_env: DISCORD_BOT_TOKEN_RESEARCHER
+
+  - id: writer
+    name: "寫作與翻譯專用助手"
+    token_env: DISCORD_BOT_TOKEN_WRITER
+
+  - id: sentinel
+    name: "排程任務與監控專用助手"
+    token_env: DISCORD_BOT_TOKEN_SENTINEL

@@ -9,12 +9,15 @@
 
 ## 2. 功能配置指南 (Core Guides)
 
+- [Agent 身分識別與個性管理 (Agent Identity)](guides/agent-identity.md)
 - [瀏覽器控制：Docker Gateway + Mac Host Chrome 完整設定](guides/browser-control.md)
 - [agent-browser 整合指南 (舊版容器內安裝)](guides/agent-browser-legacy.md)
 
 ## 3. 平台整合 (Platform Integrations)
 
 - [Telegram 整合與 Bot 設定指南](platforms/telegram.md)
+- [Discord 全功能安裝與配置指南](platforms/discord.md)
+- [Multi-Agent Discord 配置指南](guides/multi-agent-discord.md)
 
 ## 4. 進階部署 (Advanced Deployment)
 
