@@ -48,6 +48,12 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 #### 🔗 綁定通訊軟體頻道
 
+- **查看已綁定的頻道清單：**
+
+  ```bash
+  docker compose run --rm openclaw-cli channels list
+  ```
+
 - **Telegram**：
 
   ```bash
@@ -64,4 +70,32 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
   ```bash
   docker compose run --rm openclaw-cli channels login
+  ```
+
+#### 🧩 擴充技能 (Skills) 管理
+
+生態系提供官方指令，透過 ClawHub 安裝並同步 AgentSkills：
+
+- **查看目前安裝的 Skills 清單：**
+
+  ```bash
+  docker compose run --rm openclaw-cli skills list
+  ```
+
+- **安裝一個新的 Skill：**
+
+  ```bash
+  docker compose run --rm openclaw-cli skills install <skill-slug>
+  ```
+
+- **更新本地已安裝的 Skills：**
+
+  ```bash
+  docker compose run --rm openclaw-cli skills update --all
+  ```
+
+- **掃描並同步發布至 ClawHub：**
+
+  ```bash
+  docker compose run --rm openclaw-cli clawhub sync --all
   ```

@@ -1,6 +1,6 @@
 services:
   openclaw-gateway:
-    image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    build: .
     container_name: "openclaw-gateway"
     restart: unless-stopped # 開機自動重啟
     ports:
@@ -34,7 +34,7 @@ services:
       - 8.8.8.8
 
   openclaw-cli:
-    image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    build: .
     container_name: "openclaw-cli"
     # 只有在明確下令 docker compose --profile cli 才被啟用
     profiles:

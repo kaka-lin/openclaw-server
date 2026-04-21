@@ -40,9 +40,10 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 ## 日常使用指令
 
-初始化完成後，日常開關機**不需要**再執行 `./setup.sh`：
+初始化完成後，日常開關機**不需要**再執行 `./setup.sh`。我們提供了便捷的啟動腳本 `./start.sh`，將背景啟動與版本更新操作封裝起來，讓你一鍵完成部署：
 
-- **背景啟動**：`docker compose up -d openclaw-gateway`
+- **啟動伺服器**：`./start.sh`
+- **更新映像檔並啟動**：`./start.sh --pull` (強制去官方拉取最新版 OpenClaw 後重新建置)
 - **停止伺服器**：`docker compose down`
 - **查看即時日誌**：`docker compose logs -f openclaw-gateway`
 
