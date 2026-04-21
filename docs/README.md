@@ -22,6 +22,8 @@
 ## 4. 進階部署 (Advanced Deployment)
 
 - [部署腳本技術全解析 (Setup Deep Dive)](deployment/setup-deep-dive.md)
+- [擴充技能權限與系統指令配置 (Skills & Permissions)](deployment/skills-permissions-config.md)
+- [Heartbeat 心跳排程配置指南](deployment/heartbeat-config.md)
 
 ## 5. 疑難排解 (Troubleshooting)
 

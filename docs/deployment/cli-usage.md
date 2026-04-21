@@ -88,7 +88,9 @@ docker compose run --rm openclaw-cli dashboard --no-open
   docker compose run --rm openclaw-cli skills install <skill-slug>
   ```
 
-- **更新本地已安裝的 Skills：**
+- **從 ClawHub 更新本地已安裝的第三方 Skills（拉取最新版本）：**
+
+  > **⚠️ 注意**：如果您是手動修改了本地的 `SKILL.md` 進行開發，**請勿**執行此指令，否則您的修改可能會被官方遠端版本覆蓋。本地修改通常會由 Gateway 自動熱重載生效，或透過 `/restart` 重啟服務即可。
 
   ```bash
   docker compose run --rm openclaw-cli skills update --all
