@@ -1,0 +1,3 @@
+id: my-agent
+name: "My Agent"
+token_env: DISCORD_BOT_TOKEN_MY_AGENT

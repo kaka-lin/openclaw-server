@@ -4,6 +4,8 @@
 !.env.example
 agents.yaml
 !agents.yaml.example
+single-agent.yml
+!single-agent.example.yml
 .venv
 env/
 venv/
