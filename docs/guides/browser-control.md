@@ -18,7 +18,7 @@
 
 ## 2. 完整安裝與設定步驟
 
-### 2.1 步驟 1：啟動 OpenClaw Gateway (Docker)
+### 2.1 啟動 OpenClaw Gateway (Docker)
 
 在 OpenClaw 專案目錄下執行：
 
@@ -28,7 +28,7 @@ bash setup.sh
 
 確認可開啟管理介面：`http://127.0.0.1:18789`。
 
-### 2.2 步驟 2：在 Mac Host 安裝 OpenClaw CLI
+### 2.2 在 Mac Host 安裝 OpenClaw CLI
 
 Node 必須跑在 Mac 主機上才能控制本機 Chrome。執行安裝指令（跳過 onboard 流程）：
 
@@ -38,33 +38,37 @@ curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
 
 確認安裝成功：`openclaw --version`。
 
-### 2.3 步驟 3：切換工具集為 Full (Docker 端)
+### 2.3 切換工具集為 Full (Docker 端)
 
 這是最關鍵的一步。預設的 `coding` profile 不包含 `Browser` 工具。
 
 ```bash
-docker compose -f docker-compose.yml run --rm openclaw-cli config set tools.profile full
-docker compose -f docker-compose.yml restart openclaw-gateway
+docker compose run --rm openclaw-cli config set tools.profile full
+docker compose restart openclaw-gateway
 ```
 
-### 2.4 步驟 4：設定 Browser 路由與預設 Profile (Docker 端)
+### 2.4 設定 Browser 路由與預設 Profile (Docker 端)
 
 指示 Gateway 將瀏覽器請求路由到名為 "Mac Mini Node" 的節點，並避免使用 Container 內的 Chrome。
 
 ```bash
-docker compose -f docker-compose.yml run --rm openclaw-cli config set gateway.nodes.browser.mode auto
-docker compose -f docker-compose.yml run --rm openclaw-cli config set gateway.nodes.browser.node "Mac Mini Node"
-docker compose -f docker-compose.yml run --rm openclaw-cli config set browser.defaultProfile openclaw
-docker compose -f docker-compose.yml restart openclaw-gateway
+docker compose run --rm openclaw-cli config set gateway.nodes.browser.mode auto
+docker compose run --rm openclaw-cli config set gateway.nodes.browser.node "Mac Mini Node"
+docker compose run --rm openclaw-cli config set browser.defaultProfile openclaw
+docker compose restart openclaw-gateway
 ```
 
-### 2.5 步驟 5：啟動 Mac Host Node 並批准連線
+> [!TIP]
+>
+> - `openclaw` 不是寫死的唯一選擇，你完全可以根據需求自行將預設 Profile 取名並設定為你喜歡的名字。
+> - 如果沒有特別在設定檔寫死目標 Port，本地 Profile 預設通常會從 `18800` 開始自動分配。
+> - 若需要建立 **多環境/多帳號切換（Multi-Profile）** 或固定 Port 綁定，請進一步參考：[Browser Profiles 設定與 Multi-Profile 指南](./browser-profiles-config.md)。
+
+### 2.5 啟動 Mac Host Node 並批准連線
 
 #### 2.5.1. 啟動 Mac Host Node
 
-##### 選項一：手動執行
-
-在 Mac Terminal 執行（請替換為你的 Gateway Token）：
+在 Mac Terminal 手動執行以下指令（請替換為你的 Gateway Token）：
 
 ```bash
 export OPENCLAW_GATEWAY_TOKEN="<你的 gateway token>"
@@ -72,35 +76,8 @@ openclaw node run --host 127.0.0.1 --port 18789 --display-name "Mac Mini Node"
 ```
 
 > [!IMPORTANT]
-> 此指令必須保持執行狀態，不可關閉。
-
-##### 選項二：macOS LaunchAgent（開機自動啟動，推薦）
-
-Repo 提供了一個安裝腳本，會自動偵測 `openclaw` 路徑與 Gateway Token，並直接寫入 `~/Library/LaunchAgents/`。
-
-1. 執行安裝腳本：
-
-    ```bash
-    bash scripts/install-node-launchagent.sh
-    ```
-
-    腳本會依序：
-
-    - 自動偵測 `openclaw` binary 路徑（支援 nvm）
-    - 自動從 `~/.openclaw/openclaw.json` 讀取 Gateway Token
-    - 詢問 Node 顯示名稱（預設 `Mac Mini Node`）
-    - 寫入 plist 並執行 `launchctl load`
-
-2. 確認服務正常運作：
-
-    ```bash
-    launchctl list | grep openclaw
-    cat /tmp/openclaw-node.log
-    ```
-
-> [!NOTE]
-> LaunchAgent 會在登入後自動啟動，並在異常退出時自動重啟（`KeepAlive: true`）。
-> 若需手動調整，plist 範本位於 `scripts/com.openclaw.node.plist`。
+> 此終端機視窗必須保持執行狀態，不可關閉。
+> 若 Docker Gateway 重啟，強烈建議也中斷此 Node 程序再重新啟動，以避免產生舊裝置無法正常配對的情況。
 
 #### 2.5.2. 批准裝置連線 (Docker 端)
 
@@ -108,34 +85,13 @@ Node 啟動後會向 Gateway 發起配對請求，在 Docker CLI 中核准連線
 
 ```bash
 # 列出待配對裝置，找到對應的 pairing code
-docker compose -f docker-compose.yml run --rm openclaw-cli devices list
+docker compose run --rm openclaw-cli devices list
 
 # 批准指定裝置（替換為 list 輸出中對應的 pairing code）
-docker compose -f docker-compose.yml run --rm openclaw-cli devices approve <pairing-code>
+docker compose run --rm openclaw-cli devices approve <pairing-code>
 ```
 
-#### 2.5.3. 停止或卸載 LaunchAgent
-
-如需停止服務或重新安裝，執行卸載腳本：
-
-```bash
-bash scripts/uninstall-node-launchagent.sh
-```
-
-腳本會依序：
-
-- 停止正在執行的服務（`launchctl unload`）
-- 詢問是否刪除 plist 設定檔
-
-> [!TIP]
-> 僅重啟服務（不刪除 plist）可用：
->
-> ```bash
-> launchctl unload ~/Library/LaunchAgents/com.openclaw.node.plist
-> launchctl load  ~/Library/LaunchAgents/com.openclaw.node.plist
-> ```
-
-### 2.6 步驟 6：準備 Mac Chrome
+### 2.6 準備 Mac Chrome
 
 1. 確保 **Chrome 保持開啟**。
 2. 至少保留一個分頁。
@@ -149,7 +105,7 @@ bash scripts/uninstall-node-launchagent.sh
 透過 Docker CLI 執行（因為 Gateway 跑在 Docker 內，需使用已配對的 operator token）：
 
 ```bash
-docker compose -f docker-compose.yml run --rm openclaw-cli browser profiles
+docker compose run --rm openclaw-cli browser profiles
 ```
 
 > [!NOTE]
@@ -209,38 +165,6 @@ user: running (3 tabs) [existing-session]
 - **開啟新分頁：** 「開一個新的瀏覽器分頁，打開 [網址]」
 - **保持頁面：** 「停在登入頁，不要替我輸入帳號密碼」
 - **發文預覽：** 「進到發文頁面，把內容貼上，但先**不要**送出」
-
-## 5. 常見問題與排障 (FAQ)
-
-### 5.1 Q: 為什麼 Agent 一直說不支援 JS 或只能用 Web Fetch？
-
-**原因：** 這是因為 `tools.profile` 被設為 `coding` 或其他不含 `Browser` 的模式。
-**解法：** 執行步驟 3，將 profile 改為 `full` 並重啟 Gateway。
-
-### 5.2 Q: 出現 `Could not find DevToolsActivePort` 錯誤？
-
-**原因：** Gateway 試圖直接在 Docker Container 內啟動 Chrome，而非路由到 Mac Node。
-**解法：** 檢查步驟 4 的 `gateway.nodes.browser.mode` 與 `node` 設定是否正確。
-
-### 5.3 Q: Node 顯示 `pairing required`？
-
-**原因：** Mac Node 尚未在 Gateway 中被核准。
-**解法：** 執行 `openclaw-cli devices list` 取得 pairing code，再用 `openclaw-cli devices approve <pairing-code>` 進行核准。
-
-### 5.4 Q: 如何完整移除 LaunchAgent？
-
-**解法：**
-
-```bash
-bash scripts/uninstall-node-launchagent.sh
-```
-
-或手動執行：
-
-```bash
-launchctl unload ~/Library/LaunchAgents/com.openclaw.node.plist
-rm ~/Library/LaunchAgents/com.openclaw.node.plist
-```
 
 ## 延伸閱讀
 
