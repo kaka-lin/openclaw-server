@@ -109,7 +109,7 @@ prompt_input() {
   local default="$2"
   local input
 
-  printf "%s [%s]: " "$prompt" "$default"
+  printf "%s [%s]: " "$prompt" "$default" >&2
   read -r input
   echo "${input:-$default}"
 }
@@ -119,7 +119,7 @@ prompt_confirm() {
   local prompt="$1"
   local input
 
-  printf "%s [Y/n]: " "$prompt"
+  printf "%s [Y/n]: " "$prompt" >&2
   read -r input
   case "${input:-Y}" in
     [yY]|[yY][eE][sS]) return 0 ;;
@@ -155,7 +155,7 @@ interactive_setup() {
   echo ""
 
   # --- 核心設定 ---
-  AGENT_ID="$(prompt_input "Agent ID（唯一識別碼，建議 kebab-case）" "$DEFAULT_AGENT_ID")"
+  AGENT_ID="$(prompt_input "Agent ID" "$DEFAULT_AGENT_ID")"
   AGENT_NAME="$(prompt_input "Agent 顯示名稱" "$DEFAULT_AGENT_NAME")"
 
   # 當使用者自訂了 AGENT_ID，自動推導 TOKEN_ENV_VAR 與 WORKSPACE_PATH
@@ -231,19 +231,37 @@ print_summary() {
 # ==========================================
 
 cli() {
-  docker exec -it "$CONTAINER" openclaw "$@"
+  (cd "$REPO_ROOT" && docker compose run --rm openclaw-cli "$@")
 }
 
 check_container() {
-  if ! docker inspect "$CONTAINER" &>/dev/null; then
-    echo "❌ 找不到容器 $CONTAINER"
-    echo "   請先啟動：cd openclaw-server && docker compose up -d"
+  if [ ! -f "$REPO_ROOT/docker-compose.yml" ]; then
+    echo "❌ 找不到 $REPO_ROOT/docker-compose.yml"
     exit 1
   fi
 
-  if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER")" != "true" ]; then
-    echo "❌ 容器 $CONTAINER 未在執行"
-    echo "   請先啟動：cd openclaw-server && docker compose up -d"
+  if ! docker info &>/dev/null; then
+    echo "❌ Docker 未在執行，請先啟動 Docker"
+    exit 1
+  fi
+
+  # openclaw-cli 需要 join gateway 的 network namespace，確保 gateway 處於 running 狀態
+  echo "🔍 確認 Gateway 狀態..."
+  (cd "$REPO_ROOT" && docker compose up -d openclaw-gateway) 2>/dev/null || true
+  local retries=15
+  while [ "$retries" -gt 0 ]; do
+    local state
+    state="$(docker inspect -f '{{.State.Status}}' openclaw-gateway 2>/dev/null || echo "missing")"
+    if [ "$state" = "running" ]; then
+      break
+    fi
+    echo "  ⏳ Gateway 狀態: $state，等待中..."
+    sleep 2
+    retries=$((retries - 1))
+  done
+  if [ "$retries" -eq 0 ]; then
+    echo "❌ Gateway 未能在時限內進入 running 狀態"
+    echo "   請手動執行：docker compose up -d openclaw-gateway"
     exit 1
   fi
 }
@@ -293,44 +311,54 @@ install_agent() {
   echo "🔍 檢查環境變數..."
   check_env_vars
 
+  # 若 TOKEN_ENV_VAR 不在 openclaw-server .env，自動補寫並重啟 gateway（讓容器讀到新 env var）
+  local OPENCLAW_ENV="$REPO_ROOT/.env"
+  local token_value="${!TOKEN_ENV_VAR}"
+  if [ -n "$token_value" ] && ! grep -q "^${TOKEN_ENV_VAR}=" "$OPENCLAW_ENV" 2>/dev/null; then
+    echo "  📝 將 ${TOKEN_ENV_VAR} 寫入 $OPENCLAW_ENV"
+    echo "${TOKEN_ENV_VAR}=${token_value}" >> "$OPENCLAW_ENV"
+    echo "  🔄 重啟 Gateway 以載入新 Token..."
+    (cd "$REPO_ROOT" && docker compose up -d --force-recreate openclaw-gateway) 2>/dev/null || true
+    check_container
+  fi
+
   echo ""
-  echo "→ 1/5 建立 Agent..."
-  cli agents add "$AGENT_ID" 2>/dev/null || echo "  (Agent 已存在，跳過)"
+  echo "→ 1-4/5 設定 Agent、Discord 帳號與路由綁定..."
+  (cd "$REPO_ROOT" && docker compose run --rm --entrypoint /bin/sh openclaw-cli -c "
+    echo '  → 建立 Agent...'
+    openclaw agents add ${AGENT_ID} 2>/dev/null || true
 
-  echo "→ 2/5 設定 Identity 與 Workspace..."
-  cli agents set-identity --name "$AGENT_NAME" --agent "$AGENT_ID" 2>/dev/null || true
-  cli config set "agents.list.${AGENT_ID}.workspace" "$WORKSPACE_PATH"
+    echo '  → 設定 Identity...'
+    openclaw agents set-identity --name '${AGENT_NAME}' --agent ${AGENT_ID} 2>/dev/null || true
 
-  echo "→ 3/5 註冊 Discord 帳號..."
-  cli config set "channels.discord.accounts.${AGENT_ID}.token" \
-    --ref-provider default --ref-source env --ref-id "$TOKEN_ENV_VAR"
-  cli config set "channels.discord.accounts.${AGENT_ID}.allowFrom" \
-    "[\"user:${DISCORD_USER_ID}\"]" --strict-json
-  cli config set "channels.discord.accounts.${AGENT_ID}.guilds.${DISCORD_SERVER_ID}" \
-    "{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}" --strict-json
+    echo '  → 註冊 Discord 帳號...'
+    openclaw config set channels.discord.accounts.${AGENT_ID}.token --ref-provider default --ref-source env --ref-id ${TOKEN_ENV_VAR}
+    openclaw config set channels.discord.accounts.${AGENT_ID}.allowFrom '[\"user:${DISCORD_USER_ID}\"]' --strict-json
+    openclaw config set channels.discord.accounts.${AGENT_ID}.guilds '{\"${DISCORD_SERVER_ID}\": {\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}}' --strict-json
 
-  echo "→ 4/5 建立路由綁定..."
-  cli agents bind --agent "$AGENT_ID" --bind "discord:${AGENT_ID}"
+    echo '  → 建立路由綁定...'
+    openclaw agents bind --agent ${AGENT_ID} --bind discord:${AGENT_ID}
+  ")
 
   echo "→ 5/5 設定 Heartbeat..."
-  local heartbeat_json
-  heartbeat_json=$(cat <<EOF
-{
-  "every": "${HEARTBEAT_EVERY}",
-  "target": "${HEARTBEAT_TARGET}",
-  "lightContext": true,
-  "isolatedSession": true,
-  "activeHours": {
-    "start": "${HEARTBEAT_ACTIVE_START}",
-    "end": "${HEARTBEAT_ACTIVE_END}",
-    "timezone": "${HEARTBEAT_TIMEZONE}"
-  }
-}
-EOF
-)
-  # 壓成單行餵給 CLI
-  cli config set "agents.list.${AGENT_ID}.heartbeat" \
-    "$(echo "$heartbeat_json" | tr -d '\n' | tr -s ' ')" --strict-json
+  # ~/.openclaw 是 bind mount，直接在 host 操作 openclaw.json，不需要進容器
+  local config_file="${OPENCLAW_CONFIG_DIR:-$HOME/.openclaw}/openclaw.json"
+  node -e "
+    const fs = require('fs');
+    const cfg = JSON.parse(fs.readFileSync('$config_file', 'utf8'));
+    const agent = (cfg.agents && cfg.agents.list || []).find(a => a.id === '$AGENT_ID');
+    if (!agent) { console.error('Agent $AGENT_ID not found'); process.exit(1); }
+    agent.heartbeat = {
+      every: '$HEARTBEAT_EVERY',
+      target: '$HEARTBEAT_TARGET',
+      lightContext: true,
+      isolatedSession: true,
+      activeHours: { start: '$HEARTBEAT_ACTIVE_START', end: '$HEARTBEAT_ACTIVE_END', timezone: '$HEARTBEAT_TIMEZONE' }
+    };
+    fs.copyFileSync('$config_file', '$config_file' + '.bak');
+    fs.writeFileSync('$config_file', JSON.stringify(cfg, null, 2));
+    console.log('Heartbeat updated for $AGENT_ID');
+  "
 
   echo ""
   echo "=========================================="
@@ -359,7 +387,7 @@ remove_agent() {
   cli config delete "channels.discord.accounts.${AGENT_ID}" 2>/dev/null || true
 
   echo "→ 移除 Heartbeat 設定..."
-  cli config delete "agents.list.${AGENT_ID}.heartbeat" 2>/dev/null || true
+  cli config delete "agents.list.${AGENT_ID}.heartbeat" 2>/dev/null || true  # 失敗時請手動從 openclaw.json 移除
 
   echo "→ 移除 Agent..."
   cli agents remove "$AGENT_ID" 2>/dev/null || true
