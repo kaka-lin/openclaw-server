@@ -188,7 +188,7 @@ check_container() {
   echo "🔍 確認 Gateway 狀態..."
   (cd "$REPO_ROOT" && docker compose up -d openclaw-gateway) 2>/dev/null || true
   local retries=15
-  while [ "$retries" -gt 0 ]]; do
+  while [ "$retries" -gt 0 ]; do
     local state
     state="$(docker inspect -f '{{.State.Status}}' openclaw-gateway 2>/dev/null || echo "missing")"
     if [ "$state" = "running" ]; then
@@ -243,28 +243,35 @@ install_agent() {
   echo "🔍 檢查基礎環境變數..."
   check_base_env
 
+  # 確保在正確的目錄執行，以便 docker compose 讀取設定
+  pushd "$REPO_ROOT" >/dev/null
+
+  echo "→ [階段 1/6] 啟用 Discord 通道與基礎設定..."
+  docker compose run --rm openclaw-cli config set channels.discord.enabled true --strict-json
+  docker compose run --rm openclaw-cli config set channels.discord.groupPolicy allowlist
+  docker compose run --rm openclaw-cli config set channels.discord.streaming progress
+
+  echo "→ [階段 2/6] 建立 Agent 工作區與身份識別..."
+  docker compose run --rm openclaw-cli agents add "${AGENT_ID}" || true
+  docker compose run --rm openclaw-cli agents set-identity --name "${AGENT_NAME}" --agent "${AGENT_ID}" || true
+
   echo ""
-  echo "→ 設定 Agent、Discord 帳號與路由綁定..."
-  (cd "$REPO_ROOT" && docker compose run --rm --entrypoint /bin/sh openclaw-cli -c "
-    echo '  → 啟用 Discord 通道...'
-    openclaw config set channels.discord.enabled true --strict-json
-    openclaw config set channels.discord.groupPolicy allowlist
-    openclaw config set channels.discord.streaming progress
+  echo "→ [階段 3/6] 註冊 Discord 帳號 Token..."
+  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.token" --ref-provider default --ref-source env --ref-id "${TOKEN_ENV_VAR}"
 
-    echo '  → 建立 Agent...'
-    openclaw agents add ${AGENT_ID} 2>/dev/null || true
+  echo "→ [階段 4/6] 配置帳號安全性 (allowFrom)..."
+  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.allowFrom" "[\"user:${DISCORD_USER_ID}\"]" --strict-json
 
-    echo '  → 設定 Identity...'
-    openclaw agents set-identity --name '${AGENT_NAME}' --agent ${AGENT_ID} 2>/dev/null || true
+  echo "→ [階段 5/7] 初始化伺服器配置 (guilds)..."
+  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.guilds" "{}" --strict-json
 
-    echo '  → 註冊 Discord 帳號...'
-    openclaw config set channels.discord.accounts.${AGENT_ID}.token --ref-provider default --ref-source env --ref-id ${TOKEN_ENV_VAR}
-    openclaw config set channels.discord.accounts.${AGENT_ID}.allowFrom '[\"user:${DISCORD_USER_ID}\"]' --strict-json
-    openclaw config set channels.discord.accounts.${AGENT_ID}.guilds.${DISCORD_SERVER_ID} '{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}' --strict-json
+  echo "→ [階段 6/7] 配置伺服器白名單 (guilds)..."
+  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.guilds.${DISCORD_SERVER_ID}" "{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}" --strict-json
 
-    echo '  → 建立路由綁定...'
-    openclaw agents bind --agent ${AGENT_ID} --bind discord:${AGENT_ID}
-  ")
+  echo "→ [階段 7/7] 建立路由綁定 (Routing)..."
+  docker compose run --rm openclaw-cli agents bind --agent "${AGENT_ID}" --bind "discord:${AGENT_ID}"
+
+  popd >/dev/null
 
   echo ""
   echo "=========================================="
@@ -278,26 +285,6 @@ install_agent() {
   echo ""
   echo "  2. 重啟 Gateway："
   echo "     docker compose restart openclaw-gateway"
-}
-
-remove_agent() {
-  echo ""
-  echo "=========================================="
-  echo "🗑️  移除 Agent: $AGENT_ID"
-  echo "=========================================="
-
-  echo "→ 移除路由綁定..."
-  cli agents unbind --agent "$AGENT_ID" 2>/dev/null || true
-
-  echo "→ 移除 Discord 帳號設定..."
-  cli config delete "channels.discord.accounts.${AGENT_ID}" 2>/dev/null || true
-
-  echo "→ 移除 Agent..."
-  cli agents remove "$AGENT_ID" 2>/dev/null || true
-
-  echo ""
-  echo "✅ Agent $AGENT_ID 已移除"
-  echo "   請重啟 Gateway：docker compose restart openclaw-gateway"
 }
 
 # ==========================================
