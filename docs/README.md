@@ -43,7 +43,7 @@ docker compose run --rm openclaw-cli sessions --all-agents
 
 - [Agent 身分識別與個性管理](guides/agent-identity.md)
 - [Multi-Agent Discord 配置指南](guides/multi-agent-discord.md)
-- [Models Fallback 配置指南](guides/models-fallback-config.md)
+- [Models 設定指南](guides/models-config.md)
 
 ### 瀏覽器
 
