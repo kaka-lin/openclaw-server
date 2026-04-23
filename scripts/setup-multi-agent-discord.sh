@@ -160,7 +160,9 @@ docker compose run --rm --entrypoint /bin/sh openclaw-cli -c "
   echo '    → 建立 main 帳號...'
   openclaw config set channels.discord.accounts.main.token --ref-provider default --ref-source env --ref-id DISCORD_BOT_TOKEN
   openclaw config set channels.discord.accounts.main.allowFrom '[\"user:${DISCORD_USER_ID}\"]' --strict-json
-  openclaw config set channels.discord.accounts.main.guilds.${DISCORD_SERVER_ID} '{\"requireMention\": true}' --strict-json
+
+  openclaw config set channels.discord.accounts.main.guilds '{}' --strict-json
+  openclaw config set channels.discord.accounts.main.guilds.${DISCORD_SERVER_ID} '{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}' --strict-json
 
   echo '    → 建立路由綁定 (main)...'
   openclaw agents bind --agent main --bind discord:main
@@ -202,6 +204,7 @@ if [ ${#AGENTS[@]} -gt 0 ]; then
 
       echo '    → 配置帳號安全性與白名單...'
       openclaw config set channels.discord.accounts.${AGENT}.allowFrom '[\"user:${DISCORD_USER_ID}\"]' --strict-json
+      openclaw config set channels.discord.accounts.${AGENT}.guilds '{}' --strict-json
       openclaw config set channels.discord.accounts.${AGENT}.guilds.${DISCORD_SERVER_ID} '{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}' --strict-json
 
       echo '    → 建立路由綁定 (Routing)...'

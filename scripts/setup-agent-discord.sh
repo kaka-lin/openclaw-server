@@ -10,7 +10,6 @@
 # 使用方式：
 #   bash scripts/setup-agent-discord.sh              # 互動模式
 #   bash scripts/setup-agent-discord.sh --yes        # 非互動，需搭配 single-agent.yml
-#   bash scripts/setup-agent-discord.sh --remove     # 移除 Agent（互動輸入 ID）
 #
 # single-agent.yml（可選，作為預填值）：
 #   複製 single-agent.example.yml → single-agent.yml 並填入設定
@@ -22,7 +21,6 @@ set -e
 # ==========================================
 
 AUTO_YES=false
-REMOVE_MODE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,13 +28,9 @@ while [[ $# -gt 0 ]]; do
       AUTO_YES=true
       shift
       ;;
-    --remove)
-      REMOVE_MODE=true
-      shift
-      ;;
     *)
       echo "❌ 未知參數: $1"
-      echo "使用方式: bash scripts/setup-agent-discord.sh [--yes] [--remove]"
+      echo "使用方式: bash scripts/setup-agent-discord.sh [--yes]"
       exit 1
       ;;
   esac
@@ -170,10 +164,6 @@ print_summary() {
 # CLI 與容器檢查
 # ==========================================
 
-cli() {
-  (cd "$REPO_ROOT" && docker compose run --rm openclaw-cli "$@")
-}
-
 check_container() {
   if [ ! -f "$REPO_ROOT/docker-compose.yml" ]; then
     echo "❌ 找不到 $REPO_ROOT/docker-compose.yml"
@@ -230,7 +220,7 @@ check_base_env() {
 }
 
 # ==========================================
-# 安裝 / 移除
+# 安裝
 # ==========================================
 
 install_agent() {
@@ -246,30 +236,27 @@ install_agent() {
   # 確保在正確的目錄執行，以便 docker compose 讀取設定
   pushd "$REPO_ROOT" >/dev/null
 
-  echo "→ [階段 1/6] 啟用 Discord 通道與基礎設定..."
-  docker compose run --rm openclaw-cli config set channels.discord.enabled true --strict-json
-  docker compose run --rm openclaw-cli config set channels.discord.groupPolicy allowlist
-  docker compose run --rm openclaw-cli config set channels.discord.streaming progress
+  # 將所有 CLI 指令包在單一容器執行，避免多次 docker compose run
+  # 導致 Gateway 反覆重啟
+  docker compose run --rm --entrypoint /bin/sh openclaw-cli -c "
+    echo '→ [階段 1/4] 啟用 Discord 通道與基礎設定...'
+    openclaw config set channels.discord.enabled true --strict-json
+    openclaw config set channels.discord.groupPolicy allowlist
+    openclaw config set channels.discord.streaming progress
 
-  echo "→ [階段 2/6] 建立 Agent 工作區與身份識別..."
-  docker compose run --rm openclaw-cli agents add "${AGENT_ID}" || true
-  docker compose run --rm openclaw-cli agents set-identity --name "${AGENT_NAME}" --agent "${AGENT_ID}" || true
+    echo '→ [階段 2/4] 建立 Agent 工作區與身份識別...'
+    openclaw agents add ${AGENT_ID} 2>/dev/null || true
+    openclaw agents set-identity --name '${AGENT_NAME}' --agent ${AGENT_ID} 2>/dev/null || true
 
-  echo ""
-  echo "→ [階段 3/6] 註冊 Discord 帳號 Token..."
-  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.token" --ref-provider default --ref-source env --ref-id "${TOKEN_ENV_VAR}"
+    echo '→ [階段 3/4] 註冊 Discord 帳號 Token 與白名單...'
+    openclaw config set channels.discord.accounts.${AGENT_ID}.token --ref-provider default --ref-source env --ref-id ${TOKEN_ENV_VAR}
+    openclaw config set channels.discord.accounts.${AGENT_ID}.allowFrom '[\"user:${DISCORD_USER_ID}\"]' --strict-json
+    openclaw config set channels.discord.accounts.${AGENT_ID}.guilds '{}' --strict-json
+    openclaw config set channels.discord.accounts.${AGENT_ID}.guilds.${DISCORD_SERVER_ID} '{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}' --strict-json
 
-  echo "→ [階段 4/6] 配置帳號安全性 (allowFrom)..."
-  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.allowFrom" "[\"user:${DISCORD_USER_ID}\"]" --strict-json
-
-  echo "→ [階段 5/7] 初始化伺服器配置 (guilds)..."
-  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.guilds" "{}" --strict-json
-
-  echo "→ [階段 6/7] 配置伺服器白名單 (guilds)..."
-  docker compose run --rm openclaw-cli config set "channels.discord.accounts.${AGENT_ID}.guilds.${DISCORD_SERVER_ID}" "{\"requireMention\": true, \"users\": [\"${DISCORD_USER_ID}\"]}" --strict-json
-
-  echo "→ [階段 7/7] 建立路由綁定 (Routing)..."
-  docker compose run --rm openclaw-cli agents bind --agent "${AGENT_ID}" --bind "discord:${AGENT_ID}"
+    echo '→ [階段 4/4] 建立路由綁定 (Routing)...'
+    openclaw agents bind --agent ${AGENT_ID} --bind discord:${AGENT_ID}
+  "
 
   popd >/dev/null
 
@@ -293,16 +280,7 @@ install_agent() {
 
 check_container
 
-if [ "$REMOVE_MODE" = true ]; then
-  echo ""
-  AGENT_ID="$(prompt_input "要移除的 Agent ID" "${YAML_ID:-my-agent}")"
-  echo ""
-  if ! prompt_confirm "確定要移除 Agent「$AGENT_ID」？"; then
-    echo "🚫 已取消"
-    exit 0
-  fi
-  remove_agent
-elif [ "$AUTO_YES" = true ]; then
+if [ "$AUTO_YES" = true ]; then
   non_interactive_setup
   install_agent
 else
