@@ -43,9 +43,11 @@ docker compose run --rm openclaw-cli dashboard --no-open
 初始化完成後，日常開關機**不需要**再執行 `./setup.sh`。我們提供了便捷的啟動腳本 `./start.sh`，將背景啟動與版本更新操作封裝起來，讓你一鍵完成部署：
 
 - **啟動伺服器**：`./start.sh`
-- **更新映像檔並啟動**：`./start.sh --pull` (強制去官方拉取最新版 OpenClaw 後重新建置)
+- **更新映像檔並啟動**：`./start.sh --pull`（強制拉取最新版後重新建置）
+- **重啟 Gateway**：`docker compose restart openclaw-gateway`（修改 `openclaw.json` 後必須執行）
 - **停止伺服器**：`docker compose down`
 - **查看即時日誌**：`docker compose logs -f openclaw-gateway`
+- **執行 CLI 指令**：`docker compose run --rm openclaw-cli <command>`
 
 ## 注意事項
 
@@ -66,10 +68,14 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 ### 實作與操作
 
+- [部署機制深度解析](./docs/deployment/setup-deep-dive.md)
+- [Heartbeat 心跳設定指南](./docs/guides/heartbeat-config.md)
+- [自動化與 Cron Job 設定指南](./docs/guides/automation-config.md)
 - [OpenClaw APIs 呼叫指南](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-apis.md)
-- [OpenClaw Server 部署全攻略：部署機制深度解析 (Deployment Deep Dive)](./docs/deployment/setup-deep-dive.md)
 
 ### 架構與原理 (LLM-notes)
 
+- [Heartbeat 心跳機制](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/heartbeat-mechanism.md)
+- [自動化與 Cron 排程](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/automation-and-cron.md)
+- [會話隔離與重置機制](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/session-management.md)
 - [OpenClaw Docker 網路與綁定設定](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/docker-network-binding.md)
-- [OpenClaw 代理人 (Agents) 設計細節](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-agents.md)

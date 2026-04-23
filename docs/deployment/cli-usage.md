@@ -72,6 +72,56 @@ docker compose run --rm openclaw-cli dashboard --no-open
   docker compose run --rm openclaw-cli channels login
   ```
 
+#### ⏰ Cron Job 排程管理
+
+詳細設定請參考 [自動化與 Cron Job 設定指南](../guides/automation-config.md)。
+
+- **列出所有排程：**
+
+  ```bash
+  docker compose run --rm openclaw-cli cron list
+  ```
+
+- **查看特定排程詳情：**
+
+  ```bash
+  docker compose run --rm openclaw-cli cron show <job-id>
+  ```
+
+- **手動立即執行：**
+
+  ```bash
+  docker compose run --rm openclaw-cli cron run <job-id>
+  ```
+
+- **查看執行記錄：**
+
+  ```bash
+  docker compose run --rm openclaw-cli cron runs --id <job-id>
+  ```
+
+- **刪除排程：**
+
+  ```bash
+  docker compose run --rm openclaw-cli cron remove <job-id>
+  ```
+
+#### 💓 Heartbeat 管理
+
+詳細設定請參考 [Heartbeat 設定指南](../guides/heartbeat-config.md)。
+
+- **立即觸發一次 heartbeat：**
+
+  ```bash
+  docker compose run --rm openclaw-cli system event --text "heartbeat test" --mode now
+  ```
+
+- **查看上次 heartbeat 狀態：**
+
+  ```bash
+  docker compose run --rm openclaw-cli system heartbeat last
+  ```
+
 #### 🧩 擴充技能 (Skills) 管理
 
 生態系提供官方指令，透過 ClawHub 安裝並同步 AgentSkills：
