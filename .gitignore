@@ -16,8 +16,10 @@ ENV/
 .vscode/
 *.swp
 *.swo
-*~# Environment variables
-.env
+.claude/
+*~
+
+# Environment variables
 .env.local
 .env.*.local
 
