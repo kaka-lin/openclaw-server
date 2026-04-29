@@ -84,4 +84,4 @@ docker compose run --rm openclaw-cli agents set-identity \
 ## 相關參考
 
 - [Multi-Agent Discord 配置指南](./multi-agent-discord.md)
-- [OpenClaw CLI 使用手冊](../deployment/cli-usage.md)
+- [OpenClaw CLI 使用手冊](./cli-usage.md)

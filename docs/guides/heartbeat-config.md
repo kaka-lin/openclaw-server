@@ -2,11 +2,11 @@
 
 > **版本：** v2026.4.2 ｜ **更新日期：** 2026-04-23
 
-Heartbeat 讓 Agent 能定期自動執行任務，無需人工觸發。
+Heartbeat 讓 Agent 能定期執行一次 main-session turn，檢查是否有需要提醒的事項，無需人工觸發。
 
 > [!NOTE]
 > `agents.list[]` 內的 agent 只要在設定中明確加上 `heartbeat` block，Gateway 啟動時就會自動載入排程。
-> 唯一的注意事項是 **繼承規則**：只要 list 中任何一個 agent 設了 heartbeat block，其他沒設的 agent 就不再繼承 `agents.defaults.heartbeat`。詳見第 8 節。
+> 唯一的注意事項是 **繼承規則**：只要 list 中任何一個 agent 設了 heartbeat block，其他沒設的 agent 就不再繼承 `agents.defaults.heartbeat`。詳見第 7 節。
 
 ## 1. 運作機制
 
@@ -20,14 +20,14 @@ Gateway 啟動
     ↓ 喚醒 Agent，執行一次 heartbeat turn
 
 Agent 讀取 HEARTBEAT.md（若存在）
-    ↓ 依清單執行工作
+    ↓ 依清單檢查事項（必要時呼叫工具或 Skill）
 
 回應 HEARTBEAT_OK（無事） 或 Alert（有需關注事項）
     ↓ 依 target 設定決定是否推送通知
 ```
 
 > [!TIP]
-> 如果您需要執行「特定的背景任務」或是「精確時間排程」，請參考 [自動化與 Cron Job 設定指南](./automation-config.md)。
+> 如果您需要執行「特定的 detached work」或是「精確時間排程」，請參考 [自動化與 Cron Job 設定指南](./automation-config.md)。
 
 ## 2. openclaw.json 設定參數
 
@@ -157,7 +157,7 @@ tasks:
 Agent 執行完畢後的標準回應規則：
 
 - **無需關注**：回應的開頭或結尾包含 `HEARTBEAT_OK`，且總字元數少於 `ackMaxChars`（預設 300）→ OpenClaw 自動抑制，**不推送通知**
-- **需要關注**：回應中不含 `HEARTBEAT_OK` → OpenClaw 將回應傳送到 `target` 指定的頻道
+- **需要關注**：回應中不含 `HEARTBEAT_OK` → 若 `target` 能解析到外部目的地，OpenClaw 將回應傳送到指定頻道；若 `target: "none"`，則不外送
 
 ## 5. 可見度控制（Visibility Controls）
 
@@ -200,7 +200,7 @@ Agent 執行完畢後的標準回應規則：
 ```
 
 > [!NOTE]
-> 三個參數都設為 `false` 時，整個 heartbeat turn 仍會執行，只是所有輸出都被抑制。若要完全停用，請將 `every` 設為 `"0m"`。
+> `showOk`、`showAlerts`、`useIndicator` 三個參數都設為 `false` 時，OpenClaw 會直接跳過 heartbeat run（不呼叫模型）。若要停用 heartbeat cadence，請將 `every` 設為 `"0m"`。
 
 ## 6. 手動觸發
 

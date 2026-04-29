@@ -2,15 +2,16 @@
 
 > **版本：** v2026.4.2 ｜ **更新日期：** 2026-04-23
 
-OpenClaw 內建排程器（Scheduler），允許使用 Cron 表達式來執行背景任務。
+OpenClaw 內建排程器（Scheduler），允許使用 `--at`、`--every` 或 Cron 表達式精確喚醒 Agent 執行工作。
 
-## 1. 核心觀念：背景任務 (Background Tasks)
+## 1. 核心觀念：Scheduled Tasks 與 Background Tasks
 
-與透過聊天視窗即時對話不同，自動化任務以「背景任務」的形式執行：
+Cron 是 Gateway 內建的精確排程器；Background Tasks 是用來追蹤 detached work 的任務紀錄系統。每次 cron execution 都會建立 task record，但 cron 本身不是 task ledger。
 
-- **獨立運行**：預設在全新的 isolated 環境執行，不干擾主對話。
-- **持久化**：排程設定儲存在 `~/.openclaw/cron/jobs.json`，重啟 Gateway 自動載入。
-- **紀錄追蹤**：每次執行都建立 task record，留下完整日誌。
+- **排程持久化**：job 定義儲存在 `~/.openclaw/cron/jobs.json`，重啟 Gateway 自動載入。
+- **執行狀態**：runtime state 會寫在旁邊的 `jobs-state.json`。
+- **紀錄追蹤**：每次執行都建立 task record，並留下完整日誌。
+- **Session 模式**：可選 `isolated`、`main`、`current` 或 `session:<id>`；`isolated` 適合報告與背景工作，`main` 適合提醒與 system event。
 
 ## 2. 設定方式
 
@@ -75,7 +76,7 @@ docker compose run --rm openclaw-cli cron add \
 docker compose run --rm openclaw-cli cron add \
   --name "每小時同步" --every "1h" --message "同步資料"
 
-# Cron expression（5 欄位）
+# Cron expression（5 或 6 欄位；需要時搭配 --tz）
 docker compose run --rm openclaw-cli cron add \
   --name "每天早上報告" --cron "0 9 * * *" --message "產出今日摘要"
 ```

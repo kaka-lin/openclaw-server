@@ -74,7 +74,7 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 #### ⏰ Cron Job 排程管理
 
-詳細設定請參考 [自動化與 Cron Job 設定指南](../guides/automation-config.md)。
+詳細設定請參考 [自動化與 Cron Job 設定指南](./automation-config.md)。
 
 - **列出所有排程：**
 
@@ -108,7 +108,7 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 #### 💓 Heartbeat 管理
 
-詳細設定請參考 [Heartbeat 設定指南](../guides/heartbeat-config.md)。
+詳細設定請參考 [Heartbeat 設定指南](./heartbeat-config.md)。
 
 - **立即觸發一次 heartbeat：**
 

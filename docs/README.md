@@ -5,7 +5,7 @@
 ## 1. 快速入門 (Getting Started)
 
 - [安裝指南](deployment/setup.md)
-- [CLI 使用手冊](deployment/cli-usage.md)
+- [CLI 使用手冊](guides/cli-usage.md)
 
 ## 2. 常用 Docker 指令
 
@@ -49,7 +49,6 @@ docker compose run --rm openclaw-cli sessions --all-agents
 
 - [瀏覽器控制：Docker Gateway + Mac Host Chrome](guides/browser-control.md)
 - [Browser Profiles 配置指南](guides/browser-profiles-config.md)
-- [agent-browser 整合指南（舊版容器內安裝）](guides/agent-browser-legacy.md)
 
 ## 4. 範本 (Templates)
 
@@ -63,7 +62,6 @@ docker compose run --rm openclaw-cli sessions --all-agents
 ## 6. 進階部署 (Advanced Deployment)
 
 - [部署腳本技術全解析](deployment/setup-deep-dive.md)
-- [擴充技能權限與系統指令配置](deployment/skills-permissions-config.md)
 
 ## 7. 疑難排解 (Troubleshooting)
 

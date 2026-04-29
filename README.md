@@ -58,7 +58,7 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 如需綁定通訊軟體 (如 Telegram、WhatsApp 或 Discord) 或進行更進階的設定，可透過臨時容器執行 CLI 指令。
 
-👉 **詳細原理分析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/deployment/cli-usage.md)
+👉 **詳細原理分析與指令範例：** [Gateway 與 CLI 運作機制及使用指南](./docs/guides/cli-usage.md)
 
 ## 📖 完整文件庫 (Documentation)
 
@@ -71,11 +71,11 @@ docker compose run --rm openclaw-cli dashboard --no-open
 - [部署機制深度解析](./docs/deployment/setup-deep-dive.md)
 - [Heartbeat 心跳設定指南](./docs/guides/heartbeat-config.md)
 - [自動化與 Cron Job 設定指南](./docs/guides/automation-config.md)
-- [OpenClaw APIs 呼叫指南](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/openclaw-apis.md)
+- [OpenClaw APIs 呼叫指南](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/reference/openclaw-apis.md)
 
 ### 架構與原理 (LLM-notes)
 
 - [Heartbeat 心跳機制](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/heartbeat-mechanism.md)
 - [自動化與 Cron 排程](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/automation-and-cron.md)
 - [會話隔離與重置機制](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/session-management.md)
-- [OpenClaw Docker 網路與綁定設定](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/docker-network-binding.md)
+- [OpenClaw Docker 網路與綁定設定](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/deployment/docker-network-binding.md)
