@@ -50,6 +50,11 @@ docker compose run --rm openclaw-cli sessions --all-agents
 - [瀏覽器控制：Docker Gateway + Mac Host Chrome](guides/browser-control.md)
 - [Browser Profiles 配置指南](guides/browser-profiles-config.md)
 
+### 擴充技能 (Skills)
+
+- [擴充技能權限與系統指令配置](skills/permissions-config.md)
+- [agent-browser 容器內建瀏覽器](skills/agent-browser.md)
+
 ## 4. 範本 (Templates)
 
 - [HEARTBEAT.md 範例集](templates/heartbeat-examples.md)

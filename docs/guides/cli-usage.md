@@ -124,7 +124,7 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 #### 🧩 擴充技能 (Skills) 管理
 
-生態系提供官方指令，透過 ClawHub 安裝並同步 AgentSkills：
+生態系提供官方指令，讓使用者能透過 ClawHub 輕鬆安裝與更新 AgentSkills：
 
 - **查看目前安裝的 Skills 清單：**
 
@@ -140,14 +140,12 @@ docker compose run --rm openclaw-cli dashboard --no-open
 
 - **從 ClawHub 更新本地已安裝的第三方 Skills（拉取最新版本）：**
 
-  > **⚠️ 注意**：如果您是手動修改了本地的 `SKILL.md` 進行開發，**請勿**執行此指令，否則您的修改可能會被官方遠端版本覆蓋。本地修改通常會由 Gateway 自動熱重載生效，或透過 `/restart` 重啟服務即可。
+  > **⚠️ 注意**：如果您是手動修改了本地的 `SKILL.md` 進行開發，**請勿**執行此指令，否則您的修改可能會被遠端版本覆蓋。本地修改通常會由 Gateway 自動熱重載生效，或透過對話視窗輸入 `/restart` 重啟服務。
 
   ```bash
   docker compose run --rm openclaw-cli skills update --all
   ```
 
-- **掃描並同步發布至 ClawHub：**
+- **發布技能至 ClawHub (針對開發者)：**
 
-  ```bash
-  docker compose run --rm openclaw-cli clawhub sync --all
-  ```
+  發布技能使用的是獨立的 `clawhub` CLI 工具，**不包含在 `openclaw-cli` 中**。若要發布，請在本機環境使用 `npm install -g clawhub` 安裝後，直接執行 `clawhub sync --all`。

@@ -78,4 +78,5 @@ docker compose run --rm openclaw-cli dashboard --no-open
 - [Heartbeat 心跳機制](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/heartbeat-mechanism.md)
 - [自動化與 Cron 排程](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/automation-and-cron.md)
 - [會話隔離與重置機制](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/session-management.md)
+- [Skills 與 ClawHub 擴充架構](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/concepts/skills-and-clawhub.md)
 - [OpenClaw Docker 網路與綁定設定](https://github.com/kaka-lin/LLM-notes/blob/main/OpenClaw/deployment/docker-network-binding.md)
