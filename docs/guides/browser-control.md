@@ -12,9 +12,12 @@
 
 - **OpenClaw Gateway**：執行於 Docker 容器 (`openclaw-gateway`)。
 - **OpenClaw CLI (管理)**：執行於 Docker 容器 (`openclaw-cli`)，用於修改 Gateway 設定。
-- **OpenClaw Node Host**：執行於 **Mac 主機**，作為橋接器。
-- **Chrome 瀏覽器**：執行於 **Mac 主機**（使用現有的 User Profile / Session）。
+- **OpenClaw Node Host**：執行於 **Mac 主機**，作為各 profile 的 Chrome supervisor／父程序（按需啟動並維護 Chrome 子程序）。
+- **Chrome 瀏覽器**：執行於 **Mac 主機**，每個 profile 使用獨立的 user-data-dir（位於 `~/.openclaw/browser/<profile>/user-data/`），登入狀態各自保存。第一次啟動時是空白 Chrome，需在該 profile 內手動登入 Threads / IG 等服務後，狀態才會保留。
 - **控制流**：Control UI / Channels -> Gateway -> Mac Node -> Mac Chrome。
+
+> [!TIP]
+> 如果你也在用 Hermes Agent，想知道 Hermes 怎麼連到同一批 OpenClaw 啟動的 Chrome（`cdp_proxy.py` 的角色、Node 在資料路徑上嗎、lazy-load 對 Hermes 的影響等），請參閱 hermes-server 的 [瀏覽器接線架構](https://github.com/kaka-lin/hermes-server/blob/main/docs/guides/mac-chrome-cdp-guide.md)。
 
 ## 2. 完整安裝與設定步驟
 
@@ -93,12 +96,15 @@ docker compose run --rm openclaw-cli devices approve <pairing-code>
 
 ### 2.6 準備 Mac Chrome
 
-1. 確保 **Chrome 保持開啟**。
-2. 至少保留一個分頁。
+1. 確保 **OpenClaw 啟動的 Chrome 視窗保持開啟**（不要手動關閉那些彈出來的視窗，關掉 CDP port 就會掉）。
+2. 每個 profile 的 Chrome 至少保留一個分頁。
 3. 如果跳出「允許遠端連線 / Attach」的系統提示，請務必點擊 **允許**。
 4. 前往 [chrome://inspect/#remote-debugging](chrome://inspect/#remote-debugging) 確保已允許 Remote Debugging（如有此選項）。
 
 ## 3. 驗證設定是否成功
+
+> [!IMPORTANT]
+> OpenClaw 是 **lazy-load** 設計：`openclaw node run` 啟動時不會自動啟動任何 profile 的 Chrome（**連預設 profile 也不會**）。`Browser control service ready (profiles=N)` 只代表 Node 起來了，但 Chrome 還沒被 spawn。Chrome 只在你下指令使用某個 profile 時才會啟動，OpenClaw log 才會印出 `openclaw browser started`。所以下方驗證若看不到對應輸出，請先下個測試指令觸發 spawn，再驗證一次。
 
 ### 3.1 檢查 Browser Profile
 
@@ -168,6 +174,6 @@ user: running (3 tabs) [existing-session]
 
 ## 延伸閱讀
 
-關於 OpenClaw 內建的所有工具分類（如 Runtime, FS, Messaging 等）及其查詢方式，請參閱：
-
-- [OpenClaw 內建工具整理與查詢 (LLM-notes)](/Users/kaka/Projects/kaka/LLM-notes/OpenClaw/openclaw-tools-guide.md)
+- [Browser Profiles 設定與 Multi-Profile 指南](./browser-profiles-config.md) — 多 profile / 固定 port 綁定的詳細設定。
+- [Hermes 視角：Docker → Mac Chrome 接線架構](https://github.com/kaka-lin/hermes-server/blob/main/docs/guides/mac-chrome-cdp-guide.md) — 同時用 Hermes 時，搞懂兩者怎麼搭、`cdp_proxy.py` 的角色、lazy-load 與 auto-fallback 陷阱。
+- [OpenClaw 內建工具整理與查詢 (LLM-notes)](/Users/kaka/Projects/kaka/LLM-notes/OpenClaw/openclaw-tools-guide.md) — Runtime / FS / Messaging 等工具分類查詢。
